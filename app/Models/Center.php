@@ -33,4 +33,10 @@ class Center extends Model
     {
         return $this->hasMany(Report::class, 'center_id');
     }
+
+    public function doctors()
+    {
+        return $this->hasMany(Doctor::class, 'center_id');
+    }
+
 }

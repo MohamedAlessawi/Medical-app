@@ -25,6 +25,10 @@ class User extends Authenticatable
         'password',
         'ip_address',
         'two_factor_enabled',
+        'email_verified_at',
+        'birthdate',
+        'gender',
+        'address',
     ];
 
 
@@ -50,6 +54,12 @@ class User extends Authenticatable
         'is_active' => 'boolean',
         'email_verified_at' => 'datetime',
     ];
+
+    
+    public function getAgeAttribute()
+    {
+        return $this->birthdate ? \Carbon\Carbon::parse($this->birthdate)->age : null;
+    }
 
 
     public function roles()
