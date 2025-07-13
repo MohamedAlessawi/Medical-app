@@ -111,4 +111,8 @@ class User extends Authenticatable
     {
         return $this->hasMany(Report::class, 'generated_by');
     }
+    public function patientProfile()
+    {
+    return $this->hasOne(PatientProfile::class);
+    }
 }

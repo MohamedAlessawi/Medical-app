@@ -5,6 +5,7 @@ use App\Models\User;
 use App\Traits\ApiResponseTrait;
 use App\Repositories\UserRepository;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -36,12 +37,12 @@ class LoginLogoutService
         $user = $this->userRepository->findByEmailOrPhone($validated['login']);
 
         if (!$user || !Hash::check($validated['password'], $user->password)) {
-            \Log::error('Invalid credentials for user: ' . $validated['login']);
+            Log::error('Invalid credentials for user: ' . $validated['login']);
             return $this->unifiedResponse(false, 'Invalid credentials.', [], [], 401);
         }
 
         if (!$user->email_verified_at) {
-            \Log::error('Email not verified for user: ' . $user->id);
+            Log::error('Email not verified for user: ' . $user->id);
             return $this->unifiedResponse(false, 'Email not verified.', [], [], 403);
         }
 
