@@ -27,23 +27,12 @@ class PatientProfileService
             'medical_reports' => $this->repository->getMedicalReports($userId),
         ];
     }
+
     public function updateProfile($userId, array $data)
-{
-    $contact = $this->repository->updateContactInfo($userId, $data);
-    $personal = $this->repository->updatePersonalDetails($userId, $data);
+    {
+        $this->repository->updateContactInfo($userId, $data);
+        $this->repository->updatePersonalDetails($userId, $data);
 
-    return [
-        'contact_info' => [
-            'email' => $contact->email,
-            'phone' => $contact->phone,
-            //'location' => $contact->location,
-        ],
-        'personal_details' => [
-            'gender' => $personal->gender,
-            'blood_type' => $personal->blood_type,
-            'birth_date' => $personal->birth_date,
-        ]
-    ];
-}
-
+        return $this->getFullProfile($userId);
+    }
 }

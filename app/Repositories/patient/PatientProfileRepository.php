@@ -16,66 +16,64 @@ class PatientProfileRepository
         return [
             'email' => $user->email,
             'phone' => $user->phone,
-            //'location' => $user->location ?? null,//مو موجودة
+            'address' => $user->address,
         ];
     }
 
     public function getPersonalDetails($userId)
     {
-        $user = User::with('patientProfile')->findOrFail($userId);
-        $profile = $user->patientProfile;
+        $user = User::findOrFail($userId);
 
         return [
-            'gender' => $profile?->gender,
-            'age' => $profile?->birth_date ? Carbon::parse($profile->birth_date)->age : null,
-            'blood_type' => $profile?->blood_type,
+            'gender' => $user->gender,
+            'birthdate' => $user->birthdate,
+            'age' => $user->birthdate ? Carbon::parse($user->birthdate)->age : null,
+            //'blood_type' => $user->blood_type ?? null, // إذا أضفتِها لاحقاً
         ];
+    }
+
+    public function updateContactInfo($userId, array $data)
+    {
+        $user = User::findOrFail($userId);
+        $user->update([
+            'phone' => $data['phone'] ?? $user->phone,
+            'address' => $data['address'] ?? $user->address,
+        ]);
+        return $user;
+    }
+
+    public function updatePersonalDetails($userId, array $data)
+    {
+        $user = User::findOrFail($userId);
+        $user->update([
+            'gender' => $data['gender'] ?? $user->gender,
+            'birthdate' => $data['birthdate'] ?? $user->birthdate,
+        ]);
+        return $user;
     }
 
     public function getUpcomingAppointments($userId)
     {
         return Appointment::where('booked_by', $userId)
-            ->where('date', '>=', now())
-            ->with('doctor.user')
-            ->orderBy('date')
+            ->where('appointment_date', '>=', now())
+            ->with('doctor')
+            ->orderBy('appointment_date')
             ->get();
     }
 
     public function getOldAppointments($userId)
     {
         return Appointment::where('booked_by', $userId)
-            ->where('date', '<', now())
-            ->with('doctor.user')
-            ->orderByDesc('date')
+            ->where('appointment_date', '<', now())
+            ->with('doctor')
+            ->orderByDesc('appointment_date')
             ->get();
     }
 
     public function getMedicalReports($userId)
     {
         return MedicalFile::where('user_id', $userId)
-            ->with('doctor.user')
-            ->orderByDesc('created_at')
+            ->orderByDesc('upload_date')
             ->get();
     }
-    public function updateContactInfo($userId, array $data)
-{
-    $user = User::findOrFail($userId);
-    $user->update([
-        'phone' => $data['phone'] ?? $user->phone,
-        'location' => $data['location'] ?? $user->location,
-    ]);
-    return $user;
-}
-
-public function updatePersonalDetails($userId, array $data)
-{
-    return \App\Models\PatientProfile::updateOrCreate(
-        ['user_id' => $userId],
-        [
-            'gender' => $data['gender'] ?? null,
-            'blood_type' => $data['blood_type'] ?? null,
-            'birth_date' => $data['birth_date'] ?? null,
-        ]
-    );
-}
 }

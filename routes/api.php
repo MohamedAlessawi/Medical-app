@@ -8,6 +8,7 @@ use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\TwoFactorController;
 use App\Http\Controllers\Auth\AdminUserController;
 use \App\Http\Controllers\Api\Patient\PatientProfileController;
+use App\Http\Controllers\Api\Doctor\DoctorProfileController;
 
 
 
@@ -49,8 +50,16 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+//patient
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/patient/profile', [PatientProfileController::class, 'show']);
     Route::put('/patient/profile', [PatientProfileController::class, 'update']);
 });
+//Doctor
+Route::middleware(['auth:sanctum', 'role:doctor'])->group(function () {
+    Route::get('/doctor/profile', [DoctorProfileController::class, 'show']);
+    Route::put('/doctor/profile', [DoctorProfileController::class, 'update']);
+});
+
+
 
