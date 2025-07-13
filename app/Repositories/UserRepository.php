@@ -28,8 +28,14 @@ class UserRepository
     public function attachRole($userId, $roleName)
     {
         $role = Role::where('name', $roleName)->first();
+        // if ($role) {
+        //     UserRole::updateOrCreate(['user_id' => $userId], ['role_id' => $role->id]);
+        // }
         if ($role) {
-            UserRole::updateOrCreate(['user_id' => $userId], ['role_id' => $role->id]);
+            UserRole::firstOrCreate([
+                'user_id' => $userId,
+                'role_id' => $role->id,
+            ]);
         }
         return $role;
     }
