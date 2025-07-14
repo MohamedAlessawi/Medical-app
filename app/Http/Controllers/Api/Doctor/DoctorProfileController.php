@@ -8,41 +8,20 @@ use App\Services\Doctor\DoctorProfileService;
 
 class DoctorProfileController extends Controller
 {
-    protected $service;
+    protected $doctorProfileService;
 
-    public function __construct(DoctorProfileService $service)
+    public function __construct(DoctorProfileService $doctorProfileService)
     {
-        $this->service = $service;
+        $this->doctorProfileService = $doctorProfileService;
     }
 
-    public function show(Request $request)
+    public function storeOrUpdate(Request $request)
     {
-        $userId = $request->user()->id;
-
-        $profile = $this->service->getFullProfile($userId);
-
-        return response()->json([
-            'success' => true,
-            'data' => $profile
-        ]);
+        return $this->doctorProfileService->storeOrUpdate($request);
     }
-    public function update(Request $request)
-{
-    $validated = $request->validate([
-        'about_me' => 'nullable|string|max:2000',
-        'specialty_id' => 'nullable|exists:specialties,id',
-        'phone' => 'nullable|string|max:20',
-        'profile_photo' => 'nullable|string|max:255', // مسار أو رابط الصورة
-    ]);
 
-    $userId = $request->user()->id;
-    $profile = $this->service->updateProfile($userId, $validated);
-
-    return response()->json([
-        'success' => true,
-        'message' => 'Doctor profile updated successfully',
-        'data' => $profile
-    ]);
-}
-
+    public function show()
+    {
+        return $this->doctorProfileService->show();
+    }
 }

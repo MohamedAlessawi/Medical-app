@@ -3,37 +3,56 @@
 namespace App\Services\Doctor;
 
 use App\Repositories\Doctor\DoctorProfileRepository;
-
+use Illuminate\Support\Facades\Auth;
+use App\Traits\FileUploadTrait;
+use App\Traits\ApiResponseTrait;
 class DoctorProfileService
 {
-    protected $repository;
+    use FileUploadTrait;
+    use ApiResponseTrait;
 
-    public function __construct(DoctorProfileRepository $repository)
+    protected $doctorProfileRepo;
+
+    public function __construct(DoctorProfileRepository $doctorProfileRepo)
     {
-        $this->repository = $repository;
+        $this->doctorProfileRepo = $doctorProfileRepo;
     }
 
-    public function getFullProfile($userId)
+    public function storeOrUpdate($request)
     {
-        $doctor = $this->repository->getDoctorData($userId);
+        $user = Auth::user();
 
-        return [
-            'basic_info' => [
-                'full_name' => $doctor->user->full_name,
-                'email' => $doctor->user->email,
-                'phone' => $doctor->user->phone,
-                'profile_photo' => $doctor->user->profile_photo,
-                'specialty' => $doctor->specialty->name ?? null,
-            ],
-            'working_hours' => $this->repository->getWorkingHours($doctor->id),
-            'statistics' => $this->repository->getAppointmentStats($doctor->id),
-            'ratings' => $this->repository->getRatingStats($doctor->id),
+        // ✅ رفع ملف الشهادة إن وُجد
+        $certificatePath = $this->handleFileUpload($request, 'certificate', 'certificates');
+
+        $data = [
+            'user_id' => $user->id,
+            'about_me' => $request->input('about_me'),
+            'years_of_experience' => $request->input('years_of_experience'),
         ];
+
+        // فقط إذا تم رفع شهادة جديدة
+        if ($certificatePath) {
+            $data['certificate'] = $certificatePath;
+        }
+
+        $profile = $this->doctorProfileRepo->updateOrCreate(
+            ['user_id' => $user->id],
+            $data
+        );
+
+        return $this->unifiedResponse(true, 'Doctor profile saved successfully', $profile);
     }
-    public function updateProfile($userId, array $data)
-{
-    $this->repository->updateDoctorInfo($userId, $data);
-    return $this->getFullProfile($userId);
+
+    public function show()
+    {
+        $profile = $this->doctorProfileRepo->getByUserId(Auth::id());
+
+        if (!$profile) {
+            return $this->unifiedResponse(false, 'Doctor profile not found');
+        }
+
+        return $this->unifiedResponse(true, 'Doctor profile fetched successfully', $profile);
+    }
 }
 
-}

@@ -57,9 +57,10 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 //Doctor
 Route::middleware(['auth:sanctum', 'role:doctor'])->group(function () {
-    Route::get('/doctor/profile', [DoctorProfileController::class, 'show']);
-    Route::put('/doctor/profile', [DoctorProfileController::class, 'update']);
+    Route::post('doctor/profile', [DoctorProfileController::class, 'storeOrUpdate']);
+    Route::get('doctor/profile', [DoctorProfileController::class, 'show']);
 });
+
 
 
 
