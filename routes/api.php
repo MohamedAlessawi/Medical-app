@@ -9,6 +9,7 @@ use App\Http\Controllers\Auth\TwoFactorController;
 use App\Http\Controllers\Auth\AdminUserController;
 use \App\Http\Controllers\Api\Patient\PatientProfileController;
 use App\Http\Controllers\Api\Doctor\DoctorProfileController;
+use App\Http\Controllers\SuperAdmin\SuperAdminController;
 
 
 
@@ -63,4 +64,7 @@ Route::middleware(['auth:sanctum', 'role:doctor'])->group(function () {
 
 
 
+//Super-Admin
+Route::middleware(['auth:sanctum', 'role:super_admin'])
+    ->post('/superadmin/register-center-admin', [SuperAdminController::class, 'registerCenterAdmin']);
 

@@ -41,10 +41,10 @@ class LoginLogoutService
             return $this->unifiedResponse(false, 'Invalid credentials.', [], [], 401);
         }
 
-        if (!$user->email_verified_at) {
-            Log::error('Email not verified for user: ' . $user->id);
-            return $this->unifiedResponse(false, 'Email not verified.', [], [], 403);
-        }
+        // if (!$user->email_verified_at) {
+        //     Log::error('Email not verified for user: ' . $user->id);
+        //     return $this->unifiedResponse(false, 'Email not verified.', [], [], 403);
+        // }
 
         $hasRole = $user->roles()->where('name', $validated['role'])->exists();
         if (!$hasRole) {

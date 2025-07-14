@@ -10,7 +10,8 @@ trait ApiResponseTrait
             'success' => $success,
             'message' => $message,
             'data' => $data,
-            'errors' => $errors
+            'errors' => $errors,
+            'status'  => $status,
         ], $status);
     }
 }
