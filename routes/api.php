@@ -7,6 +7,8 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\TwoFactorController;
 use App\Http\Controllers\Auth\AdminUserController;
+use \App\Http\Controllers\Api\Patient\PatientProfileController;
+use App\Http\Controllers\Api\Doctor\DoctorProfileController;
 
 
 
@@ -42,7 +44,23 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('2fa/enable', [TwoFactorController::class, 'enable']);
     Route::post('2fa/disable', [TwoFactorController::class, 'disable']);
     Route::post('2fa/verify', [TwoFactorController::class, 'verify']);
+
+
 });
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+//patient
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/patient/profile', [PatientProfileController::class, 'show']);
+    Route::put('/patient/profile', [PatientProfileController::class, 'update']);
+});
+//Doctor
+Route::middleware(['auth:sanctum', 'role:doctor'])->group(function () {
+    Route::post('doctor/profile', [DoctorProfileController::class, 'storeOrUpdate']);
+    Route::get('doctor/profile', [DoctorProfileController::class, 'show']);
+});
+
+
+
+

@@ -55,7 +55,7 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
-    
+
     public function getAgeAttribute()
     {
         return $this->birthdate ? \Carbon\Carbon::parse($this->birthdate)->age : null;
@@ -120,5 +120,9 @@ class User extends Authenticatable
     public function reports()
     {
         return $this->hasMany(Report::class, 'generated_by');
+    }
+    public function doctorProfile()
+    {
+    return $this->hasOne(DoctorProfile::class);
     }
 }

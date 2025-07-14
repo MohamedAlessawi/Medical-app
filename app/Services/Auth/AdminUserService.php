@@ -6,6 +6,8 @@ use App\Models\User;
 use App\Models\UserVerify;
 use App\Traits\ApiResponseTrait;
 use App\Repositories\UserRepository;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
@@ -26,7 +28,7 @@ class AdminUserService
     public function addUserRole($request)
     {
         try {
-            $validator = \Validator::make($request->all(), [
+            $validator = Validator::make($request->all(), [
                 'full_name' => 'required|string|max:255',
                 'email' => 'required|string|email|max:255',
                 'phone' => 'required|string|max:15',
@@ -69,7 +71,7 @@ class AdminUserService
             if (!$request->verify_email) {
                 $code = Str::random(6);
                 UserVerify::create(['user_id' => $user->id, 'token' => $code]);
-                \Cache::put($request->ip(), [$code, $request->email], now()->addMinutes(10));
+                Cache::put($request->ip(), [$code, $request->email], now()->addMinutes(10));
             }
 
             // Send email with credentials

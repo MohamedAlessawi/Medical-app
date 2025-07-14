@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use App\Services\Auth\TwoFactorService;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Controller;
@@ -32,13 +33,13 @@ class TwoFactorController extends Controller
 
     public function verify(Request $request)
     {
-        \Log::info('Received 2FA verification request', $request->all());
+        Log::info('Received 2FA verification request', $request->all());
 
         try {
             $result = $this->twoFactorService->verify2FA($request);
             return $result; # [MODIFIED] - Return service result directly
         } catch (\Exception $e) {
-            \Log::error('Error during 2FA verification: ' . $e->getMessage());
+            Log::error('Error during 2FA verification: ' . $e->getMessage());
             return $this->unifiedResponse(false, 'An error occurred during 2FA verification.', [], ['error' => $e->getMessage()], 500);
         }
     }

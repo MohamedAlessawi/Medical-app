@@ -1,6 +1,7 @@
 <?php
 namespace App\Services\Auth;
 
+use Illuminate\Support\Facades\Log;
 use App\Models\PasswordResetCode;
 use Illuminate\Support\Facades\Mail;
 use App\Traits\ApiResponseTrait;
@@ -26,7 +27,7 @@ class ForgotPasswordService
 
             return $this->unifiedResponse(true, 'Reset code sent to your email.', [], [], 200);
         } catch (\Exception $e) {
-            \Log::error('Error sending reset code: ' . $e->getMessage());
+            Log::error('Error sending reset code: ' . $e->getMessage());
             return $this->unifiedResponse(false, 'Failed to send reset code.', [], ['error' => $e->getMessage()], 500);
         }
     }
