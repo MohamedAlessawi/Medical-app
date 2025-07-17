@@ -58,7 +58,7 @@ class LoginLogoutService
         $token = $user->createToken('auth_token')->plainTextToken;
         $refreshToken = Str::random(60);
         $user->refresh_token = $refreshToken;
-        $user->refresh_token_expires_at = Carbon::now()->addMinutes(20);
+        $user->refresh_token_expires_at = Carbon::now()->addMinutes(14400);
         $user->save();
 
         return $this->unifiedResponse(true, 'Login successful.', [

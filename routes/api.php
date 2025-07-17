@@ -10,6 +10,9 @@ use App\Http\Controllers\Auth\AdminUserController;
 use \App\Http\Controllers\Api\Patient\PatientProfileController;
 use App\Http\Controllers\Api\Doctor\DoctorProfileController;
 use App\Http\Controllers\SuperAdmin\SuperAdminController;
+use App\Http\Controllers\Secretary\PatientController;
+use App\Http\Controllers\Secretary\DoctorController;
+
 
 
 
@@ -68,3 +71,24 @@ Route::middleware(['auth:sanctum', 'role:doctor'])->group(function () {
 Route::middleware(['auth:sanctum', 'role:super_admin'])
     ->post('/superadmin/register-center-admin', [SuperAdminController::class, 'registerCenterAdmin']);
 
+
+
+//Secretary
+Route::middleware(['auth:sanctum', 'role:secretary'])->prefix('secretary')->group(function () {
+    Route::post('/patients', [PatientController::class, 'store']);
+    Route::get('/patients', [PatientController::class, 'index']);
+    Route::get('/patients/{id}', [PatientController::class, 'show']);
+    Route::put('/patients/{id}', [PatientController::class, 'update']);
+    Route::put('/patients/{id}/profile', [PatientController::class, 'updateProfile']);
+
+    Route::get('/doctors', [DoctorController::class, 'index']);
+    Route::get('/doctors/{id}', [DoctorController::class, 'show']);
+
+    Route::get('/doctors/{id}/working-hours', [DoctorController::class, 'getWorkingHours']);
+    Route::post('/doctors/{id}/working-hours', [DoctorController::class, 'storeWorkingHour']);
+    Route::put('/doctors/working-hours/{hour_id}', [DoctorController::class, 'updateWorkingHour']);
+    Route::delete('/doctors/working-hours/{hour_id}', [DoctorController::class, 'deleteWorkingHour']);
+
+    Route::get('/doctors/search', [DoctorController::class, 'search']);
+    Route::get('/patients/search', [PatientController::class, 'search']);
+});

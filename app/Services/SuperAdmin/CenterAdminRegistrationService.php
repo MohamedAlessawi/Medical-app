@@ -34,77 +34,86 @@ class CenterAdminRegistrationService
         try {
             $user = $this->userRepository->findByEmailOrPhone($request->email ?? $request->phone);
 
-            if (!$user) {
-                $password = Str::random(12);
-                $userData = [
+
+            $password = Str::random(12) ;
+
+            if ($existingUser) {
+                // إذا الحساب موجود مسبقاً
+                $user = $existingUser;
+
+                // تأكد عندو الدور
+                $adminRole = Role::where('name', 'admin')->first();
+                UserRole::firstOrCreate([
+                    'user_id' => $user->id,
+                    'role_id' => $adminRole->id,
+                ]);
+
+                // فعّل الحساب إذا مو مفعل
+                if (!$user->email_verified_at) {
+                    $user->email_verified_at = now();
+                    $user->save();
+                }
+            } else {
+                // أنشئ مستخدم جديد
+                $user = User::create([
                     'full_name' => $request->full_name,
                     'email' => $request->email,
                     'phone' => $request->phone,
                     'password' => Hash::make($password),
                     'ip_address' => $request->ip(),
-                ];
-                $user = $this->userRepository->create($userData);
-                $isNewUser = true;
-            } else {
-                $isNewUser = false;
-                $password = null;
-            }
-            $this->userRepository->attachRole($user->id, 'center_admin');
+                    'email_verified_at' => now(),
+                ]);
 
+                $adminRole = Role::where('name', 'admin')->first();
+                UserRole::create([
+                    'user_id' => $user->id,
+                    'role_id' => $adminRole->id,
+                ]);
+            }
+
+            // إنشاء المركز
             $center = Center::create([
                 'name' => $request->center_name,
                 'location' => $request->center_location,
             ]);
 
+            // ربط المستخدم بالمركز كـ admin
             AdminCenter::create([
                 'user_id' => $user->id,
                 'center_id' => $center->id,
             ]);
 
-            License::create([
-                'user_id' => $user->id,
-                'status' => 'pending',
-                'issued_by' => 'system',
-                'issue_date' => now(),
-            ]);
-
+            // تسجيل الاشتراك
             Subscription::create([
                 'user_id' => $user->id,
                 'center_id' => $center->id,
-                'amount' => $request->amount ?? 0,
+                'amount' => $request->amount,
                 'status' => 'pending',
-                'payment_date' => null,
+                'payment_date' => now(),
             ]);
 
-            if ($isNewUser) {
-                Mail::send('emails.center_admin_account', [
-                    'email' => $user->email,
-                    'password' => $password,
-                    'center_name' => $center->name,
-                ], function($message) use ($user) {
-                    $message->to($user->email);
-                    $message->subject('Your Center Admin Account Information');
-                });
-            } else {
-                Mail::send('emails.center_admin_added', [
-                    'center_name' => $center->name,
-                ], function($message) use ($user) {
-                    $message->to($user->email);
-                    $message->subject('You have been assigned as a Center Admin');
-                });
-            }
+            // إرسال البريد الإلكتروني
+            Mail::send('emails.new_admin', [
+                'email' => $user->email,
+                'password' => $user ? '[Use your existing password]' : $password,
+                'center_name' => $center->name
+            ], function ($message) use ($user) {
+                $message->to($user->email);
+                $message->subject('Center Admin Account Created');
+            });
 
             DB::commit();
 
-            return $this->unifiedResponse(true, 'Center and admin registered successfully.', [
+            return $this->unifiedResponse(true, 'Center admin registered successfully.', [
                 'user_id' => $user->id,
-                'center_id' => $center->id,
+                'center_id' => $center->id
             ], [], 201);
-
         } catch (Exception $e) {
             DB::rollBack();
-            \Log::error('Error in center admin registration: ' . $e->getMessage());
-            return $this->unifiedResponse(false, 'Failed to register center and admin.', [], ['error' => $e->getMessage()], 500);
+
+            return $this->unifiedResponse(false, 'Failed to register center admin.', [], [
+                'error' => $e->getMessage()
+            ], 500);
         }
     }
 }

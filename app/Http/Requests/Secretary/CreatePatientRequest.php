@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\Secretary;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class RegisterCenterAdminRequest extends FormRequest
+class CreatePatientRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -23,11 +23,11 @@ class RegisterCenterAdminRequest extends FormRequest
     {
         return [
             'full_name' => 'required|string|max:255',
-            'email' => 'required|email|max:255',
-            'phone' => 'required|string|max:15',
-            'center_name' => 'required|string|max:255',
-            'center_location' => 'required|string|max:255',
-            'amount' => 'nullable|numeric|min:0',
+            'email' => 'required|email',
+            'phone' => 'required|string',
+            'gender' => 'required|in:male,female',
+            'birthdate' => 'required|date',
+            'address' => 'nullable|string',
         ];
     }
 }

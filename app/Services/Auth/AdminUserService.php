@@ -4,6 +4,9 @@ namespace App\Services\Auth;
 
 use App\Models\User;
 use App\Models\UserVerify;
+use App\Models\Center;
+use App\Models\Secretary;
+use App\Models\Doctor;
 use App\Traits\ApiResponseTrait;
 use App\Repositories\UserRepository;
 use Illuminate\Support\Facades\Validator;
@@ -28,28 +31,43 @@ class AdminUserService
     public function addUserRole($request)
     {
         try {
-            $validator = Validator::make($request->all(), [
-                'full_name' => 'required|string|max:255',
-                'email' => 'required|string|email|max:255',
-                'phone' => 'required|string|max:15',
-                'role' => 'required|exists:roles,name',
-                'verify_email' => 'nullable|boolean'
-            ]);
+            // $validator = Validator::make($request->all(), [
+            //     'full_name' => 'required|string|max:255',
+            //     'email' => 'required|string|email|max:255',
+            //     'phone' => 'required|string|max:15',
+            //     'role' => 'required|exists:roles,name',
+            //     'verify_email' => 'nullable|boolean',
+            // ]);
 
-            if ($validator->fails()) {
-                return $this->unifiedResponse(false, 'Validation failed.', [], $validator->errors()->toArray(), 422);
-            }
+            // if ($validator->fails()) {
+            //     return $this->unifiedResponse(false, 'Validation failed.', [], $validator->errors()->toArray(), 422);
+            // }
 
+            $data = $request->validated();
             $user = $this->userRepository->findByEmailOrPhone($request->email ?? $request->phone);
 
             if ($user) {
                 // User exists, add new role
                 $this->userRepository->attachRole($user->id, $request->role);
+
+                if ($data['role'] === 'secretary') {
+                    Secretary::firstOrCreate([
+                        'user_id' => $user->id,
+                        'center_id' => $data['center_id'],
+                    ]);
+                }
+                if ($data['role'] === 'doctor') {
+                    Doctor::firstOrCreate([
+                        'user_id' => $user->id,
+                        'center_id' => $data['center_id'],
+                    ]);
+                }
+
                 return $this->unifiedResponse(true, 'Role added successfully.', ['user_id' => $user->id], [], 200);
             }
 
             // Create new user
-            $password = Str::random(12);
+            $password = '12345678';
             $userData = [
                 'full_name' => $request->full_name,
                 'email' => $request->email,
@@ -65,6 +83,20 @@ class AdminUserService
 
             $user = $this->userRepository->create($userData);
             $this->userRepository->attachRole($user->id, $request->role);
+
+            if ($data['role'] === 'secretary') {
+                Secretary::create([
+                    'user_id' => $user->id,
+                    'center_id' => $data['center_id'],
+                ]);
+            }
+            if ($data['role'] === 'doctor') {
+                Doctor::firstOrCreate([
+                    'user_id' => $user->id,
+                    'center_id' => $data['center_id'],
+                ]);
+            }
+
 
             // Generate verification code if not manually verified
             $code = null;

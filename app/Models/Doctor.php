@@ -10,7 +10,6 @@ class Doctor extends Model
     use HasFactory;
     protected $fillable = [
         'user_id',
-        'specialty_id',
         'center_id',
     ];
 
@@ -25,10 +24,10 @@ class Doctor extends Model
     }
 
 
-    public function specialty()
-    {
-        return $this->belongsTo(Specialty::class);
-    }
+    // public function specialty()
+    // {
+    //     return $this->belongsTo(Specialty::class);
+    // }
 
     public function workingHours()
     {

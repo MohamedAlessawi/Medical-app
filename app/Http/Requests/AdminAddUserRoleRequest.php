@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class RegisterCenterAdminRequest extends FormRequest
+class AdminAddUserRoleRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -23,11 +23,11 @@ class RegisterCenterAdminRequest extends FormRequest
     {
         return [
             'full_name' => 'required|string|max:255',
-            'email' => 'required|email|max:255',
+            'email' => 'required|string|email|max:255',
             'phone' => 'required|string|max:15',
-            'center_name' => 'required|string|max:255',
-            'center_location' => 'required|string|max:255',
-            'amount' => 'nullable|numeric|min:0',
+            'role' => 'required|exists:roles,name',
+            'verify_email' => 'nullable|boolean',
+            'center_id' => 'required|exists:centers,id',
         ];
     }
 }

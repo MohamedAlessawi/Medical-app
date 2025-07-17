@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Services\Auth\AdminUserService;
 use Illuminate\Http\Request;
+use App\Http\Requests\AdminAddUserRoleRequest;
+
 
 class AdminUserController extends Controller
 {
@@ -15,7 +17,7 @@ class AdminUserController extends Controller
         $this->adminUserService = $adminUserService;
     }
 
-    public function addUserRole(Request $request)
+    public function addUserRole(AdminAddUserRoleRequest $request)
     {
         $result = $this->adminUserService->addUserRole($request);
         return $result;
