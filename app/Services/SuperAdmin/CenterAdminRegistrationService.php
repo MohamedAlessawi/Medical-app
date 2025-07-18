@@ -32,29 +32,25 @@ class CenterAdminRegistrationService
     {
         DB::beginTransaction();
         try {
-            $user = $this->userRepository->findByEmailOrPhone($request->email ?? $request->phone);
+            $existingUser = $this->userRepository->findByEmailOrPhone($request->email ?? $request->phone);
 
 
-            $password = Str::random(12) ;
+            $password = "12345678" ;
 
             if ($existingUser) {
-                // إذا الحساب موجود مسبقاً
                 $user = $existingUser;
 
-                // تأكد عندو الدور
                 $adminRole = Role::where('name', 'admin')->first();
                 UserRole::firstOrCreate([
                     'user_id' => $user->id,
                     'role_id' => $adminRole->id,
                 ]);
 
-                // فعّل الحساب إذا مو مفعل
                 if (!$user->email_verified_at) {
                     $user->email_verified_at = now();
                     $user->save();
                 }
             } else {
-                // أنشئ مستخدم جديد
                 $user = User::create([
                     'full_name' => $request->full_name,
                     'email' => $request->email,
@@ -71,19 +67,16 @@ class CenterAdminRegistrationService
                 ]);
             }
 
-            // إنشاء المركز
             $center = Center::create([
                 'name' => $request->center_name,
                 'location' => $request->center_location,
             ]);
 
-            // ربط المستخدم بالمركز كـ admin
             AdminCenter::create([
                 'user_id' => $user->id,
                 'center_id' => $center->id,
             ]);
 
-            // تسجيل الاشتراك
             Subscription::create([
                 'user_id' => $user->id,
                 'center_id' => $center->id,
@@ -92,7 +85,6 @@ class CenterAdminRegistrationService
                 'payment_date' => now(),
             ]);
 
-            // إرسال البريد الإلكتروني
             Mail::send('emails.new_admin', [
                 'email' => $user->email,
                 'password' => $user ? '[Use your existing password]' : $password,
