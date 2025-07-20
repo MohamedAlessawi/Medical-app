@@ -20,4 +20,22 @@ class DoctorProfileRepository
     {
         return DoctorProfile::where('user_id', $userId)->first();
     }
+    public function getPendingProfiles()
+    {
+        return DoctorProfile::with('user')->where('status', 'pending')->get();
+    }
+
+    public function find($id)
+    {
+        return DoctorProfile::findOrFail($id);
+    }
+
+    public function updateStatus($id, $status)
+    {
+        $profile = $this->find($id);
+        $profile->status = $status;
+        $profile->save();
+        return $profile;
+    }
 }
+

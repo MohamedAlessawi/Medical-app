@@ -27,6 +27,8 @@ class Kernel extends HttpKernel
         // Other middleware
         '2fa' => \App\Http\Middleware\TwoFactorMiddleware::class,
         'role' => \App\Http\Middleware\RoleMiddleware::class,
+        'doctor.approved' => \App\Http\Middleware\EnsureDoctorApproved::class,
+
     ];
 
 
