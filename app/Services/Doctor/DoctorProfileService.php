@@ -4,12 +4,14 @@ namespace App\Services\Doctor;
 
 use App\Repositories\Doctor\DoctorProfileRepository;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 use App\Traits\FileUploadTrait;
 use App\Traits\ApiResponseTrait;
+use App\Models\User;
+
 class DoctorProfileService
 {
-    use FileUploadTrait;
-    use ApiResponseTrait;
+    use FileUploadTrait, ApiResponseTrait;
 
     protected $doctorProfileRepo;
 
@@ -19,30 +21,82 @@ class DoctorProfileService
     }
 
     public function storeOrUpdate($request)
-    {
-        $user = Auth::user();
+{
+    /** @var \App\Models\User $user */
+    $user = Auth::user();
 
-        // ✅ رفع ملف الشهادة إن وُجد
-        $certificatePath = $this->handleFileUpload($request, 'certificate', 'certificates');
+    $existingProfile = $this->doctorProfileRepo->getByUserId($user->id);
+    $isNew = !$existingProfile;
 
-        $data = [
-            'user_id' => $user->id,
-            'about_me' => $request->input('about_me'),
-            'years_of_experience' => $request->input('years_of_experience'),
-        ];
+    // ✅ القواعد حسب إذا كانت أول مرة أو لا
+    $rules = [
+        'profile_photo' => 'nullable|image|max:2048',
+        'birthdate' => $isNew ? 'required|date' : 'nullable|date',
+        'gender' => $isNew ? 'required|in:male,female' : 'nullable|in:male,female',
+        'address' => $isNew ? 'required|string|max:255' : 'nullable|string|max:255',
 
-        // فقط إذا تم رفع شهادة جديدة
-        if ($certificatePath) {
-            $data['certificate'] = $certificatePath;
-        }
+        'about_me' => $isNew ? 'required|string' : 'nullable|string',
+        'specialty_id' => $isNew ? 'required|exists:specialties,id' : 'nullable|exists:specialties,id',
+        'years_of_experience' => $isNew ? 'required|integer' : 'nullable|integer',
+        'specialty_id' => $isNew ? 'required|exists:specialties,id' : 'nullable|exists:specialties,id',
+        'certificate' => $isNew ? 'required|file|mimes:pdf,jpg,jpeg,png' : 'nullable|file',
+        'appointment_duration' => $isNew ? 'required|integer' : 'nullable|integer',
+    ];
 
-        $profile = $this->doctorProfileRepo->updateOrCreate(
-            ['user_id' => $user->id],
-            $data
-        );
+    $validated = Validator::make($request->all(), $rules)->validate();
 
-        return $this->unifiedResponse(true, 'Doctor profile saved successfully', $profile);
+    // ✅ معالجة الملفات
+    $certificatePath = $this->handleFileUpload($request, 'certificate', 'certificates');
+    $profilePicPath = $this->handleFileUpload($request, 'profile_photo', 'profile_photos');
+
+    // ✅ تحديث جدول doctor_profiles
+    $doctorData = [
+        'user_id' => $user->id,
+        'about_me' => $validated['about_me'] ?? null,
+        'specialty_id' => $validated['specialty_id'] ?? null,
+        'years_of_experience' => $validated['years_of_experience'] ?? null,
+    ];
+
+    if ($certificatePath) {
+        $doctorData['certificate'] = $certificatePath;
     }
+
+    $profile = $this->doctorProfileRepo->updateOrCreate(
+        ['user_id' => $user->id],
+        $doctorData
+    );
+
+    // ✅ تحديث جدول users
+    $user->gender = $validated['gender'] ?? $user->gender;
+    $user->birthdate = $validated['birthdate'] ?? $user->birthdate;
+    $user->address = $validated['address'] ?? $user->address;
+
+    if ($profilePicPath) {
+        $user->profile_photo = $profilePicPath;
+    }
+
+    $user->save();
+
+    return $this->unifiedResponse(true, 'Doctor profile saved successfully', [
+    'doctor_profile' => [
+        'about_me' => $profile->about_me,
+        'years_of_experience' => $profile->years_of_experience,
+        'specialty_id' => $profile->specialty_id,
+        'certificate' => $profile->certificate,
+        "appointment_duration"=> $profile->appointment_duration,
+        'status' => $profile->status,
+    ],
+    'user' => [
+        'full_name' => $user->full_name,
+        'gender' => $user->gender,
+        'birthdate' => $user->birthdate,
+        'profile_photo' => $user->profile_photo,
+        'address' => $user->address,
+    ]
+]);
+
+}
+
 
     public function show()
     {

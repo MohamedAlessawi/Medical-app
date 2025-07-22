@@ -18,6 +18,7 @@ return new class extends Migration
     $table->integer('years_of_experience')->nullable();
     $table->string('certificate')->nullable();
     $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
+
     $table->timestamps();
 });
 
