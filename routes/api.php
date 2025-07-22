@@ -13,7 +13,6 @@ use App\Http\Controllers\SuperAdmin\SuperAdminController;
 use App\Http\Controllers\Secretary\PatientController;
 use App\Http\Controllers\Secretary\DoctorController;
 use App\Http\Controllers\SuperAdmin\DoctorApprovalController;
-
 use App\Http\Controllers\SuperAdmin\LicenseController;
 use App\Http\Controllers\SuperAdmin\CenterController;
 use App\Http\Controllers\SuperAdmin\CenterAdminController;
@@ -68,8 +67,6 @@ Route::middleware('auth:sanctum')->group(function () {
 //Doctor
 Route::middleware(['auth:sanctum', 'role:doctor'])->group(function () {
     Route::post('doctor/profile', [DoctorProfileController::class, 'storeOrUpdate']);
-});
-Route::middleware(['auth:sanctum', 'role:doctor', 'doctor.approved'])->group(function () {
     Route::get('doctor/profile', [DoctorProfileController::class, 'show']);
 });
 
