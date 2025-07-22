@@ -85,6 +85,21 @@ class CenterAdminRegistrationService
                 'payment_date' => now(),
             ]);
 
+            $filePath = null;
+            if ($request->hasFile('license_file')) {
+                $file = $request->file('license_file');
+                $filePath = $file->store('licenses', 'public');
+            }
+
+            License::create([
+                'user_id' => $user->id,
+                'center_id' => $center->id,
+                'status' => 'pending',
+                'issued_by' => $request->issued_by,
+                'issue_date' => $request->issue_date,
+                'file_path' => $filePath,
+            ]);
+
             Mail::send('emails.new_admin', [
                 'email' => $user->email,
                 'password' => $user ? '[Use your existing password]' : $password,

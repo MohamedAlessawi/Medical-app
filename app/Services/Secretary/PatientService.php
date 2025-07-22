@@ -117,9 +117,10 @@ class PatientService
                 'full_name' => $user->full_name,
                 'email' => $user->email,
                 'phone' => $user->phone,
-                'birthdate' => $user->birthdate,
-                'gender' => $user->gender,
-                'address' => $user->address,
+                // 'birthdate' => $user->birthdate,
+                'age' => $user->birthdate ? \Carbon\Carbon::parse($user->birthdate)->age : null,
+                // 'gender' => $user->gender,
+                // 'address' => $user->address,
                 'patient_profile' => optional($user->patientProfile)->only(['condition', 'last_visit', 'status']),
             ]);
 
@@ -219,24 +220,27 @@ class PatientService
         $centerId = Auth::user()->secretaries->first()->center_id;
 
         $results = User::whereHas('userCenters', function ($q) use ($centerId) {
-            $q->where('center_id', $centerId);
-        })
-        ->whereHas('roles', function ($q) {
-            $q->where('name', 'patient');
-        })
-        ->where(function ($q) use ($query) {
-            $q->where('full_name', 'like', "%$query%")
-            ->orWhere('phone', 'like', "%$query%");
-        })
-        ->orWhereHas('patientProfile', function ($q) use ($query) {
-            $q->where('condition', 'like', "%$query%");
-        })
-        ->with('patientProfile')
-        ->get();
+                $q->where('center_id', $centerId);
+            })
+            ->whereHas('roles', function ($q) {
+                $q->where('name', 'patient');
+            })
+            ->where(function ($q) use ($query) {
+                $q->where('full_name', 'like', "%$query%")
+                ->orWhere('phone', 'like', "%$query%")
+                ->orWhereHas('patientProfile', function ($sub) use ($query) {
+                    $sub->where('condition', 'like', "%$query%");
 
-        return $this->unifiedResponse(true, 'Search results', $results->only([
-            'id', 'full_name', 'email', 'phone', 'birthdate', 'gender', 'address'
-        ]));
+                });
+            })
+            ->with(['patientProfile:id,user_id,condition'])
+            ->get(['id', 'full_name', 'email', 'phone', 'birthdate', 'gender', 'address']);
+
+        if ($results->isEmpty()) {
+            return $this->unifiedResponse(false, 'No matching patients found.', [], [], 404);
+        }
+
+        return $this->unifiedResponse(true, 'Search results', $results);
     }
 
 
