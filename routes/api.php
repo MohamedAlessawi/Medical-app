@@ -90,6 +90,7 @@ Route::middleware(['auth:sanctum', 'role:secretary'])->prefix('secretary')->grou
     Route::get('/patients/{id}', [PatientController::class, 'show']);
     Route::put('/patients/{id}', [PatientController::class, 'update']);
     Route::put('/patients/{id}/profile', [PatientController::class, 'updateProfile']);
+    Route::post('/patients/{id}/upload-medical-file', [PatientController::class, 'uploadMedicalFile']);//malek
 
     Route::get('/doctors', [DoctorController::class, 'index']);
     Route::get('/doctors/{id}', [DoctorController::class, 'show']);
@@ -101,4 +102,10 @@ Route::middleware(['auth:sanctum', 'role:secretary'])->prefix('secretary')->grou
 
     Route::get('/doctors/search', [DoctorController::class, 'search']);
     Route::get('/patients/search', [PatientController::class, 'search']);
+    //malek
+    Route::get('/doctors/{id}/appointments', [DoctorController::class, 'getAppointments']);
+    Route::post('/doctors/book-appointment', [DoctorController::class, 'bookAppointment']);
+    Route::put('/appointments/{id}', [DoctorController::class, 'updateAppointment']);
+    Route::delete('/appointments/{id}', [DoctorController::class, 'deleteAppointment']);
+    Route::put('/appointments/{id}/attendance', [DoctorController::class, 'confirmAttendance']);
 });
