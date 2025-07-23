@@ -13,7 +13,6 @@ use App\Http\Controllers\SuperAdmin\SuperAdminController;
 use App\Http\Controllers\Secretary\PatientController;
 use App\Http\Controllers\Secretary\DoctorController;
 use App\Http\Controllers\SuperAdmin\DoctorApprovalController;
-
 use App\Http\Controllers\SuperAdmin\LicenseController;
 use App\Http\Controllers\SuperAdmin\CenterController;
 use App\Http\Controllers\SuperAdmin\CenterAdminController;
@@ -68,8 +67,6 @@ Route::middleware('auth:sanctum')->group(function () {
 //Doctor
 Route::middleware(['auth:sanctum', 'role:doctor'])->group(function () {
     Route::post('doctor/profile', [DoctorProfileController::class, 'storeOrUpdate']);
-});
-Route::middleware(['auth:sanctum', 'role:doctor', 'doctor.approved'])->group(function () {
     Route::get('doctor/profile', [DoctorProfileController::class, 'show']);
 });
 
@@ -125,6 +122,7 @@ Route::middleware(['auth:sanctum', 'role:secretary'])->prefix('secretary')->grou
     Route::get('/patients/{id}', [PatientController::class, 'show']);
     Route::put('/patients/{id}', [PatientController::class, 'update']);
     Route::put('/patients/{id}/profile', [PatientController::class, 'updateProfile']);
+    Route::post('/patients/{id}/upload-medical-file', [PatientController::class, 'uploadMedicalFile']);//malek
 
     Route::get('/doctors', [DoctorController::class, 'index']);
     Route::get('/doctors/{id}', [DoctorController::class, 'show']);
@@ -136,4 +134,10 @@ Route::middleware(['auth:sanctum', 'role:secretary'])->prefix('secretary')->grou
 
     Route::get('/doctors/search', [DoctorController::class, 'search']);
     Route::get('/patients/search', [PatientController::class, 'search']);
+    //malek
+    Route::get('/doctors/{id}/appointments', [DoctorController::class, 'getAppointments']);
+    Route::post('/doctors/book-appointment', [DoctorController::class, 'bookAppointment']);
+    Route::put('/appointments/{id}', [DoctorController::class, 'updateAppointment']);
+    Route::delete('/appointments/{id}', [DoctorController::class, 'deleteAppointment']);
+    Route::put('/appointments/{id}/attendance', [DoctorController::class, 'confirmAttendance']);
 });
