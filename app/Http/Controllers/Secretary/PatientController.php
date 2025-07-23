@@ -7,14 +7,18 @@ use App\Http\Requests\Secretary\CreatePatientRequest;
 use App\Http\Requests\Secretary\UpdatePatientRequest;
 use App\Http\Requests\Secretary\UpdatePatientProfileRequest;
 use App\Services\Secretary\PatientService;
+use App\Services\Secretary\MedicalFileService;
+use Illuminate\Http\Request;
 
 class PatientController extends Controller
 {
     protected $patientService;
+    protected $medicalFileService;
 
-    public function __construct(PatientService $patientService)
+    public function __construct(PatientService $patientService, MedicalFileService $medicalFileService)
     {
         $this->patientService = $patientService;
+        $this->medicalFileService = $medicalFileService;
     }
 
     public function store(CreatePatientRequest $request)
@@ -45,5 +49,10 @@ class PatientController extends Controller
     public function search(Request $request)
     {
         return $this->patientService->searchPatients($request->query('query'));
+    }
+
+    public function uploadMedicalFile(Request $request, $id)
+    {
+        return $this->medicalFileService->uploadMedicalFile($request, $id);
     }
 }
