@@ -139,9 +139,11 @@ class PatientService
             'full_name' => $user->full_name,
             'email' => $user->email,
             'phone' => $user->phone,
-            'birthdate' => $user->birthdate,
-            'gender' => $user->gender,
-            'address' => $user->address,
+            // 'birthdate' => $user->birthdate,
+            'age' => $user->birthdate ? \Carbon\Carbon::parse($user->birthdate)->age : null,
+
+            // 'gender' => $user->gender,
+            // 'address' => $user->address,
             'patient_profile' => optional($user->patientProfile)->only(['condition', 'last_visit', 'status']),
         ];
 
