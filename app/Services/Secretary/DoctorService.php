@@ -88,17 +88,24 @@ class DoctorService
         $centerId = Auth::user()->secretaries->first()->center_id;
 
         $results = Doctor::where('center_id', $centerId)
-            ->whereHas('user', function ($q) use ($query) {
-                $q->where('full_name', 'like', "%$query%")
-                ->orWhere('phone', 'like', "%$query%");
+            ->where(function ($q) use ($query) {
+                $q->whereHas('user', function ($sub) use ($query) {
+                    $sub->where('full_name', 'like', "%$query%")
+                        ->orWhere('phone', 'like', "%$query%");
+                })
+                ->orWhereHas('user.doctorProfile', function ($sub) use ($query) {
+                    $sub->where('specialization', 'like', "%$query%");
+                });
             })
-            ->orWhereHas('user.doctorProfile', function ($q) use ($query) {
-                $q->where('specialization', 'like', "%$query%");
-            })
-            ->with(['user', 'user.doctorProfile'])
+            ->with(['user:id,full_name,phone,email', 'user.doctorProfile:id,user_id,specialization'])
             ->get();
+
+        if ($results->isEmpty()) {
+            return $this->unifiedResponse(false, 'No matching doctors found.', [], [], 404);
+        }
 
         return $this->unifiedResponse(true, 'Search results', $results);
     }
+
 
 }

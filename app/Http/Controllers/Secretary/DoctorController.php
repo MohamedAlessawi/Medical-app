@@ -6,14 +6,17 @@ use App\Http\Controllers\Controller;
 use App\Services\Secretary\DoctorService;
 use App\Http\Requests\Secretary\WorkingHourRequest;
 use Illuminate\Http\Request;
+use App\Services\Secretary\AppointmentService;
 
 class DoctorController extends Controller
 {
     protected $doctorService;
+    protected $appointmentService;
 
-    public function __construct(DoctorService $doctorService)
+    public function __construct(DoctorService $doctorService, AppointmentService $appointmentService)
     {
         $this->doctorService = $doctorService;
+        $this->appointmentService = $appointmentService;
     }
 
     public function index()
@@ -49,6 +52,34 @@ class DoctorController extends Controller
     public function search(Request $request)
     {
         return $this->doctorService->searchDoctors($request->query('query'));
+    }
+
+    public function getAppointments($id)
+    {
+        return $this->appointmentService->getDoctorAppointments($id);
+    }
+
+    public function bookAppointment(Request $request)
+    {
+        $data = $request->only(['doctor_id', 'appointment_date', 'booked_by', 'status', 'attendance_status', 'notes']);
+        return $this->appointmentService->createAppointment($data);
+    }
+
+    public function updateAppointment(Request $request, $id)
+    {
+        $data = $request->only(['doctor_id', 'appointment_date', 'booked_by', 'status', 'attendance_status', 'notes']);
+        return $this->appointmentService->updateAppointment($id, $data);
+    }
+
+    public function deleteAppointment($id)
+    {
+        return $this->appointmentService->deleteAppointment($id);
+    }
+
+    public function confirmAttendance(Request $request, $id)
+    {
+        $status = $request->input('attendance_status');
+        return $this->appointmentService->confirmAttendance($id, $status);
     }
 }
 

@@ -8,10 +8,16 @@ use Illuminate\Database\Eloquent\Model;
 class Center extends Model
 {
     use HasFactory;
-     protected $fillable = ['name', 'location', 'rating'];
+     protected $fillable = [
+        'name',
+        'location',
+        'rating',
+        'is_active'
+    ];
 
     protected $casts = [
         'rating' => 'decimal:3',
+        'is_active' => 'boolean'
     ];
 
     public function userCenters()
