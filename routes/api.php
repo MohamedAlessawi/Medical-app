@@ -32,6 +32,7 @@ use App\Http\Controllers\SuperAdmin\DoctorApprovalController;
 
 // Auth routes
 route::post('register',[RegisterController::class, 'register']);
+Route::post('/doctor/register', [RegisterController::class, 'registerDoctor']);
 Route::post('verify-email', [RegisterController::class, 'verifyEmail']);
 Route::middleware('throttle:2,10')->post('resend-verification-code',[RegisterController::class,'resendVerificationCode'])
     ->name('resend.verification.code');;
@@ -62,11 +63,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/patient/profile', [PatientProfileController::class, 'update']);
 });
 //Doctor
-Route::middleware(['auth:sanctum', 'role:doctor'])->group(function () {
-    Route::post('doctor/profile', [DoctorProfileController::class, 'storeOrUpdate']);
-});
+
 Route::middleware(['auth:sanctum', 'role:doctor', 'doctor.approved'])->group(function () {
     Route::get('doctor/profile', [DoctorProfileController::class, 'show']);
+    Route::post('doctor/profile', [DoctorProfileController::class, 'storeOrUpdate']);
+
 });
 
 

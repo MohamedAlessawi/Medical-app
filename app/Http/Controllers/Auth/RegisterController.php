@@ -28,6 +28,13 @@ class RegisterController extends Controller
         return $result;
     }
 
+    public function registerDoctor(Request $request)
+{
+    $result = $this->registerService->registerDoctor($request);
+    return $result;
+}
+
+
     public function verifyEmail(Request $request)
     {
         $result = $this->emailVerificationService->verifyEmail($request);

@@ -50,6 +50,13 @@ class LoginLogoutService
     if (!$hasRole) {
         return $this->unifiedResponse(false, 'User does not have the requested role.', [], [], 403);
     }
+    if ($validated['role'] === 'doctor') {
+    $doctorProfile = $user->doctorProfile;
+
+    if (!$doctorProfile || $doctorProfile->status !== 'approved') {
+        return $this->unifiedResponse(false, 'Doctor account is not approved yet or rejected .', [], [], 403);
+    }
+    }
 
     if ($user->two_factor_enabled) {
         return $this->unifiedResponse(true, '2FA required.', ['user_id' => $user->id], [], 200);
@@ -61,19 +68,6 @@ class LoginLogoutService
     $user->refresh_token_expires_at = Carbon::now()->addMinutes(14400);
     $user->save();
 
-    // $step = 'main_app';
-
-    // if ($user->hasRole('doctor')) {
-    //     $doctorProfile = $user->doctorProfile;
-
-    //     if (!$doctorProfile) {
-    //         $step = 'complete_profile';
-    //     } elseif ($doctorProfile->status === 'pending') {
-    //         $step = 'waiting_approval';
-    //     } elseif ($doctorProfile->status === 'rejected') {
-    //         $step = 're_register';
-    //     }
-    // }
 
     return $this->unifiedResponse(true, 'Login successful.', [
         'access_token' => $token,
