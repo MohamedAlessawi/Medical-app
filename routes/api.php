@@ -13,9 +13,12 @@ use App\Http\Controllers\SuperAdmin\SuperAdminController;
 use App\Http\Controllers\Secretary\PatientController;
 use App\Http\Controllers\Secretary\DoctorController;
 use App\Http\Controllers\SuperAdmin\DoctorApprovalController;
-
-
-
+use App\Http\Controllers\SuperAdmin\LicenseController;
+use App\Http\Controllers\SuperAdmin\CenterController;
+use App\Http\Controllers\SuperAdmin\CenterAdminController;
+use App\Http\Controllers\SuperAdmin\UserManagementController;
+use App\Http\Controllers\SuperAdmin\DashboardController;
+use App\Http\Controllers\SuperAdmin\ReportController;
 
 
 
@@ -73,15 +76,46 @@ Route::middleware(['auth:sanctum', 'role:doctor', 'doctor.approved'])->group(fun
 
 
 
-//Super-Admin
-Route::middleware(['auth:sanctum', 'role:super_admin'])
-    ->post('/superadmin/register-center-admin', [SuperAdminController::class, 'registerCenterAdmin']);
+// //Super-Admin
+// Route::middleware(['auth:sanctum', 'role:super_admin'])
+//     ->post('/superadmin/register-center-admin', [SuperAdminController::class, 'registerCenterAdmin']);
+
 Route::middleware(['auth:sanctum', 'role:super_admin'])->prefix('super-admin')->group(function () {
     Route::get('/doctors/pending', [DoctorApprovalController::class, 'listPending']);
     Route::post('/doctors/{id}/approve', [DoctorApprovalController::class, 'approve']);
     Route::post('/doctors/{id}/reject', [DoctorApprovalController::class, 'reject']);
 });
 
+Route::middleware(['auth:sanctum', 'role:super_admin'])->prefix('superadmin')->group(function () {
+    //انشاء مركز وربطه مع المدير
+    Route::post('/register-center-admin', [SuperAdminController::class, 'registerCenterAdmin']);
+
+    // تراخيص المراكز
+    Route::get('/licenses', [LicenseController::class, 'index']);
+    Route::get('/licenses/{id}', [LicenseController::class, 'show']);
+    Route::put('/licenses/{id}/status', [LicenseController::class, 'updateStatus']);
+
+    // إدارة المراكز
+    Route::get('/centers', [CenterController::class, 'index']);
+    Route::get('/centers/{id}', [CenterController::class, 'show']);
+    Route::put('/centers/{id}', [CenterController::class, 'update']);
+    Route::put('/centers/{id}/toggle-status', [CenterController::class, 'toggleStatus']);
+
+    // مدراء المراكز
+    Route::get('/center-admins', [CenterAdminController::class, 'index']);
+    Route::get('/center-admins/{id}', [CenterAdminController::class, 'show']);
+    Route::put('/center-admins/{id}', [CenterAdminController::class, 'update']);
+    Route::put('/center-admins/{id}/toggle-status', [CenterAdminController::class, 'toggleStatus']);
+
+    // إدارة الحسابات والصلاحيات
+    Route::put('/users/{id}/toggle-status', [UserManagementController::class, 'toggleStatus']);
+    Route::post('/users/{id}/assign-role', [UserManagementController::class, 'assignRole']);
+
+    // الإحصائيات والتقارير
+    Route::get('/dashboard/statistics', [DashboardController::class, 'getStats']);
+    Route::get('/reports', [ReportController::class, 'index']);
+    Route::get('/reports/{id}', [ReportController::class, 'show']);
+});
 
 
 //Secretary
@@ -91,6 +125,7 @@ Route::middleware(['auth:sanctum', 'role:secretary'])->prefix('secretary')->grou
     Route::get('/patients/{id}', [PatientController::class, 'show']);
     Route::put('/patients/{id}', [PatientController::class, 'update']);
     Route::put('/patients/{id}/profile', [PatientController::class, 'updateProfile']);
+    Route::post('/patients/{id}/upload-medical-file', [PatientController::class, 'uploadMedicalFile']);//malek
 
     Route::get('/doctors', [DoctorController::class, 'index']);
     Route::get('/doctors/{id}', [DoctorController::class, 'show']);
@@ -102,4 +137,10 @@ Route::middleware(['auth:sanctum', 'role:secretary'])->prefix('secretary')->grou
 
     Route::get('/doctors/search', [DoctorController::class, 'search']);
     Route::get('/patients/search', [PatientController::class, 'search']);
+    //malek
+    Route::get('/doctors/{id}/appointments', [DoctorController::class, 'getAppointments']);
+    Route::post('/doctors/book-appointment', [DoctorController::class, 'bookAppointment']);
+    Route::put('/appointments/{id}', [DoctorController::class, 'updateAppointment']);
+    Route::delete('/appointments/{id}', [DoctorController::class, 'deleteAppointment']);
+    Route::put('/appointments/{id}/attendance', [DoctorController::class, 'confirmAttendance']);
 });

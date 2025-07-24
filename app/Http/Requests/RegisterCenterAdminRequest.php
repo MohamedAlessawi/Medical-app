@@ -28,6 +28,9 @@ class RegisterCenterAdminRequest extends FormRequest
             'center_name' => 'required|string|max:255',
             'center_location' => 'required|string|max:255',
             'amount' => 'nullable|numeric|min:0',
+            'issued_by' => 'required|string|max:255',
+            'issue_date' => 'required|date',
+            'license_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
         ];
     }
 }
