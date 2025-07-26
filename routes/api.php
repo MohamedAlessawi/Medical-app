@@ -8,7 +8,7 @@ use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\TwoFactorController;
 use App\Http\Controllers\Auth\AdminUserController;
 use \App\Http\Controllers\Api\Patient\PatientProfileController;
-use App\Http\Controllers\Api\Doctor\DoctorProfileController;
+use App\Http\Controllers\Api\Doctor\DoctorAppointmentController;
 use App\Http\Controllers\SuperAdmin\SuperAdminController;
 use App\Http\Controllers\Secretary\PatientController;
 use App\Http\Controllers\Secretary\DoctorController;
@@ -19,6 +19,8 @@ use App\Http\Controllers\SuperAdmin\CenterAdminController;
 use App\Http\Controllers\SuperAdmin\UserManagementController;
 use App\Http\Controllers\SuperAdmin\DashboardController;
 use App\Http\Controllers\SuperAdmin\ReportController;
+use App\Http\Controllers\Api\Doctor\DoctorProfileController;
+
 
 
 
@@ -70,7 +72,10 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::middleware(['auth:sanctum', 'role:doctor', 'doctor.approved'])->group(function () {
     Route::get('doctor/profile', [DoctorProfileController::class, 'show']);
     Route::post('doctor/profile', [DoctorProfileController::class, 'storeOrUpdate']);
-
+    Route::get('doctor/appointments', [DoctorAppointmentController::class, 'index']);
+    Route::get('doctor/appointments/{id}', [DoctorAppointmentController::class, 'show']);
+    Route::put('doctor/appointments/{id}/attendance', [DoctorAppointmentController::class, 'confirmAttendance']);
+    Route::get('doctor/past-appointments', [DoctorAppointmentController::class, 'pastAppointments']);
 });
 
 
@@ -84,6 +89,7 @@ Route::middleware(['auth:sanctum', 'role:super_admin'])->prefix('super-admin')->
     Route::get('/doctors/pending', [DoctorApprovalController::class, 'listPending']);
     Route::post('/doctors/{id}/approve', [DoctorApprovalController::class, 'approve']);
     Route::post('/doctors/{id}/reject', [DoctorApprovalController::class, 'reject']);
+
 });
 
 Route::middleware(['auth:sanctum', 'role:super_admin'])->prefix('superadmin')->group(function () {
