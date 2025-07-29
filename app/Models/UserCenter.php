@@ -8,7 +8,13 @@ use Illuminate\Database\Eloquent\Model;
 class UserCenter extends Model
 {
     use HasFactory;
-    protected $fillable = ['user_id', 'center_id'];
+    protected $fillable = [
+        'user_id',
+        'center_id',
+        'condition',
+        'last_visit',
+        'status'
+    ];
     public $timestamps = false;
 
     public function user()

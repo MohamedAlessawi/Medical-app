@@ -20,10 +20,36 @@ class DoctorService
             $centerId = Auth::user()->secretaries->first()->center_id;
 
             $doctors = Doctor::where('center_id', $centerId)
-                ->with('user.doctorProfile')
-                ->get();
+                ->with([
+                    'user:id,full_name,email,address',
+                    'user.doctorProfile:id,user_id,about_me,years_of_experience,specialty_id',
+                    'user.doctorProfile.specialty:id,name',
+                    'workingHours:id,doctor_id,day_of_week,start_time,end_time',
+                    'appointments:id,doctor_id,patient_id'
+                ])
+                ->get()
+                ->map(function ($doctor) {
+                    return [
+                        'full_name' => 'Dr. ' . $doctor->user->full_name,
+                        'email' => $doctor->user->email,
+                        'address' => $doctor->user->address ?? null,
+                        'about_me' => $doctor->user->doctorProfile->about_me ?? null,
+                        'years_of_experience' => $doctor->user->doctorProfile->years_of_experience ?? null,
+                        'specialty' => $doctor->user->doctorProfile->specialty->name ?? null,
+                        'working_hours' => $doctor->workingHours->map(function ($hour) {
+                            return [
+                                'day_of_week' => $hour->day_of_week,
+                                'start_time' => $hour->start_time,
+                                'end_time' => $hour->end_time,
+                            ];
+                        }),
+                        'total_patients' => $doctor->appointments->unique('patient_id')->count(),
+                        'total_appointments' => $doctor->appointments->count(),
+                    ];
+                });
 
             return $this->unifiedResponse(true, 'Doctors retrieved successfully.', $doctors);
+
         } catch (Exception $e) {
             Log::error('Failed to fetch doctors: ' . $e->getMessage());
             return $this->unifiedResponse(false, 'Failed to fetch doctors.', [], ['error' => $e->getMessage()], 500);
@@ -33,8 +59,35 @@ class DoctorService
     public function getDoctorDetails($id)
     {
         try {
-            $doctor = Doctor::with('user.doctorProfile')->findOrFail($id);
-            return $this->unifiedResponse(true, 'Doctor details fetched.', $doctor);
+            $doctor = Doctor::with([
+                    'user:id,full_name,email,address',
+                    'user.doctorProfile:id,user_id,about_me,years_of_experience,specialty_id',
+                    'user.doctorProfile.specialty:id,name',
+                    'workingHours:id,doctor_id,day_of_week,start_time,end_time',
+                    'appointments:id,doctor_id,patient_id'
+                ])
+                ->findOrFail($id);
+
+            $data = [
+                'full_name' => 'Dr. ' . $doctor->user->full_name,
+                'email' => $doctor->user->email,
+                'address' => $doctor->user->address ?? null,
+                'about_me' => $doctor->user->doctorProfile->about_me ?? null,
+                'years_of_experience' => $doctor->user->doctorProfile->years_of_experience ?? null,
+                'specialty' => $doctor->user->doctorProfile->specialty->name ?? null,
+                'working_hours' => $doctor->workingHours->map(function ($hour) {
+                    return [
+                        'day_of_week' => $hour->day_of_week,
+                        'start_time' => $hour->start_time,
+                        'end_time' => $hour->end_time,
+                    ];
+                }),
+                'total_patients' => $doctor->appointments->unique('patient_id')->count(),
+                'total_appointments' => $doctor->appointments->count(),
+            ];
+
+            return $this->unifiedResponse(true, 'Doctor details fetched successfully.', $data);
+
         } catch (Exception $e) {
             return $this->unifiedResponse(false, 'Doctor not found.', [], ['error' => $e->getMessage()], 404);
         }
@@ -85,27 +138,56 @@ class DoctorService
 
     public function searchDoctors($query)
     {
-        $centerId = Auth::user()->secretaries->first()->center_id;
+        try {
+            $centerId = Auth::user()->secretaries->first()->center_id;
 
-        $results = Doctor::where('center_id', $centerId)
-            ->where(function ($q) use ($query) {
-                $q->whereHas('user', function ($sub) use ($query) {
-                    $sub->where('full_name', 'like', "%$query%")
-                        ->orWhere('phone', 'like', "%$query%");
+            $results = Doctor::where('center_id', $centerId)
+                ->where(function ($q) use ($query) {
+                    $q->whereHas('user', function ($sub) use ($query) {
+                        $sub->where('full_name', 'like', "%$query%")
+                            ->orWhere('phone', 'like', "%$query%");
+                    })
+                    ->orWhereHas('user.doctorProfile.specialty', function ($sub) use ($query) {
+                        $sub->where('name', 'like', "%$query%");
+                    });
                 })
-                ->orWhereHas('user.doctorProfile', function ($sub) use ($query) {
-                    $sub->where('specialization', 'like', "%$query%");
+                ->with([
+                    'user:id,full_name,email,address,phone',
+                    'user.doctorProfile:id,user_id,about_me,years_of_experience,specialty_id',
+                    'user.doctorProfile.specialty:id,name',
+                    'workingHours:id,doctor_id,day_of_week,start_time,end_time',
+                    'appointments:id,doctor_id,patient_id'
+                ])
+                ->get()
+                ->map(function ($doctor) {
+                    return [
+                        'full_name' => 'Dr. ' . $doctor->user->full_name,
+                        'email' => $doctor->user->email,
+                        'address' => $doctor->user->address ?? null,
+                        'about_me' => $doctor->user->doctorProfile->about_me ?? null,
+                        'years_of_experience' => $doctor->user->doctorProfile->years_of_experience ?? null,
+                        'specialty' => $doctor->user->doctorProfile->specialty->name ?? null,
+                        'working_hours' => $doctor->workingHours->map(function ($hour) {
+                            return [
+                                'day_of_week' => $hour->day_of_week,
+                                'start_time' => $hour->start_time,
+                                'end_time' => $hour->end_time,
+                            ];
+                        }),
+                        'total_patients' => $doctor->appointments->unique('patient_id')->count(),
+                        'total_appointments' => $doctor->appointments->count(),
+                    ];
                 });
-            })
-            ->with(['user:id,full_name,phone,email', 'user.doctorProfile:id,user_id,specialization'])
-            ->get();
 
-        if ($results->isEmpty()) {
-            return $this->unifiedResponse(false, 'No matching doctors found.', [], [], 404);
+            if ($results->isEmpty()) {
+                return $this->unifiedResponse(false, 'No matching doctors found.', [], [], 404);
+            }
+
+            return $this->unifiedResponse(true, 'Search results fetched successfully.', $results);
+
+        } catch (Exception $e) {
+            return $this->unifiedResponse(false, 'Failed to search doctors.', [], ['error' => $e->getMessage()], 500);
         }
-
-        return $this->unifiedResponse(true, 'Search results', $results);
     }
-
 
 }
