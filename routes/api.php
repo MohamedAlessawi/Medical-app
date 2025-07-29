@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\Doctor\DoctorProfileController;
 use App\Http\Controllers\SuperAdmin\SuperAdminController;
 use App\Http\Controllers\Secretary\PatientController;
 use App\Http\Controllers\Secretary\DoctorController;
+use App\Http\Controllers\Secretary\SecretaryProfileController;
 use App\Http\Controllers\SuperAdmin\DoctorApprovalController;
 use App\Http\Controllers\SuperAdmin\LicenseController;
 use App\Http\Controllers\SuperAdmin\CenterController;
@@ -140,4 +141,7 @@ Route::middleware(['auth:sanctum', 'role:secretary'])->prefix('secretary')->grou
     Route::put('/appointments/{id}', [DoctorController::class, 'updateAppointment']);
     Route::delete('/appointments/{id}', [DoctorController::class, 'deleteAppointment']);
     Route::put('/appointments/{id}/attendance', [DoctorController::class, 'confirmAttendance']);
+
+    Route::get('/profile', [SecretaryProfileController::class, 'show']);
+    Route::post('/profile', [SecretaryProfileController::class, 'update']);
 });
