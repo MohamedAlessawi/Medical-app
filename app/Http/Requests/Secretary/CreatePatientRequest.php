@@ -28,6 +28,9 @@ class CreatePatientRequest extends FormRequest
             'gender' => 'required|in:male,female',
             'birthdate' => 'required|date',
             'address' => 'nullable|string',
+            'condition' => 'nullable|string',
+            'last_visit' => 'nullable|date',
+            'status' => 'nullable|string',
         ];
     }
 }

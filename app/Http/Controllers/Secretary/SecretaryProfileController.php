@@ -3,25 +3,37 @@
 namespace App\Http\Controllers\Secretary;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Secretary\UpdateSecretaryProfileRequest;
-use App\Services\Secretary\SecretaryProfileService;
+use App\Services\Secretary\SecretaryService;
+use Illuminate\Http\Request;
 
 class SecretaryProfileController extends Controller
 {
-    protected $profileService;
+    protected $secretaryService;
 
-    public function __construct(SecretaryProfileService $profileService)
+    public function __construct(SecretaryService $secretaryService)
     {
-        $this->profileService = $profileService;
+        $this->secretaryService = $secretaryService;
     }
 
-    public function show()
+
+    public function getProfile(Request $request)
     {
-        return $this->profileService->showProfile();
+        $userId = $request->user()->id;
+        return $this->secretaryService->getProfile($userId);
     }
 
-    public function update(UpdateSecretaryProfileRequest $request)
+
+    public function updateProfile(Request $request)
     {
-        return $this->profileService->updateProfile($request);
+        $userId = $request->user()->id;
+        $data = $request->only(['full_name', 'email', 'phone', 'address']);
+        return $this->secretaryService->updateProfile($userId, $data);
+    }
+
+
+    public function updateProfilePhoto(Request $request)
+    {
+        $userId = $request->user()->id;
+        return $this->secretaryService->updateProfilePhoto($request, $userId);
     }
 }

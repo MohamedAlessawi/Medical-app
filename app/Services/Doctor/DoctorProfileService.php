@@ -25,88 +25,101 @@ class DoctorProfileService
     /** @var \App\Models\User $user */
     $user = Auth::user();
 
-    $existingProfile = $this->doctorProfileRepo->getByUserId($user->id);
-    $isNew = !$existingProfile;
+    $profile = $this->doctorProfileRepo->getByUserId($user->id);
 
-    // ✅ القواعد حسب إذا كانت أول مرة أو لا
+    if (!$profile) {
+        return $this->unifiedResponse(false, 'Doctor profile not found. Please complete registration first.', [], [], 404);
+    }
+
+    // ✅ القواعد الجديدة (كلها nullable لأنه تعديل فقط)
     $rules = [
         'profile_photo' => 'nullable|image|max:2048',
-        'birthdate' => $isNew ? 'required|date' : 'nullable|date',
-        'gender' => $isNew ? 'required|in:male,female' : 'nullable|in:male,female',
-        'address' => $isNew ? 'required|string|max:255' : 'nullable|string|max:255',
+        'birthdate' => 'nullable|date',
+        'gender' => 'nullable|in:male,female',
+        'address' => 'nullable|string|max:255',
 
-        'about_me' => $isNew ? 'required|string' : 'nullable|string',
-        'specialty_id' => $isNew ? 'required|exists:specialties,id' : 'nullable|exists:specialties,id',
-        'years_of_experience' => $isNew ? 'required|integer' : 'nullable|integer',
-        'specialty_id' => $isNew ? 'required|exists:specialties,id' : 'nullable|exists:specialties,id',
-        'certificate' => $isNew ? 'required|file|mimes:pdf,jpg,jpeg,png' : 'nullable|file',
-        'appointment_duration' => $isNew ? 'required|integer' : 'nullable|integer',
+        'about_me' => 'nullable|string',
+        'specialty_id' => 'nullable|exists:specialties,id',
+        'years_of_experience' => 'nullable|integer|min:0',
+        'certificate' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:4096',
+        'appointment_duration' => 'nullable|integer|min:1',
     ];
 
     $validated = Validator::make($request->all(), $rules)->validate();
 
     // ✅ معالجة الملفات
     $certificatePath = $this->handleFileUpload($request, 'certificate', 'certificates');
-    $profilePicPath = $this->handleFileUpload($request, 'profile_photo', 'profile_photos');
+    $profilePhotoPath = $this->handleFileUpload($request, 'profile_photo', 'profile_photos');
 
-    // ✅ تحديث جدول doctor_profiles
-    $doctorData = [
-        'user_id' => $user->id,
-        'about_me' => $validated['about_me'] ?? null,
-        'specialty_id' => $validated['specialty_id'] ?? null,
-        'years_of_experience' => $validated['years_of_experience'] ?? null,
-    ];
+    // ✅ تحديث doctor_profiles
+    $profile->update([
+    'about_me' => $validated['about_me'] ?? $profile->about_me,
+    'specialty_id' => $validated['specialty_id'] ?? $profile->specialty_id,
+    'years_of_experience' => $validated['years_of_experience'] ?? $profile->years_of_experience,
+    'appointment_duration' => $validated['appointment_duration'] ?? $profile->appointment_duration,
+    'certificate' => $certificatePath ?? $profile->certificate,
+    'status' => $certificatePath ? 'pending' : $profile->status,
+]);
+$statusNote = $certificatePath ? 'Status reverted to pending due to certificate update.' : null;
 
-    if ($certificatePath) {
-        $doctorData['certificate'] = $certificatePath;
-    }
-
-    $profile = $this->doctorProfileRepo->updateOrCreate(
-        ['user_id' => $user->id],
-        $doctorData
-    );
 
     // ✅ تحديث جدول users
-    $user->gender = $validated['gender'] ?? $user->gender;
-    $user->birthdate = $validated['birthdate'] ?? $user->birthdate;
-    $user->address = $validated['address'] ?? $user->address;
+    $user->update([
+        'gender' => $validated['gender'] ?? $user->gender,
+        'birthdate' => $validated['birthdate'] ?? $user->birthdate,
+        'address' => $validated['address'] ?? $user->address,
+        'profile_photo' => $profilePhotoPath ?? $user->profile_photo,
+    ]);
 
-    if ($profilePicPath) {
-        $user->profile_photo = $profilePicPath;
+    return $this->unifiedResponse(true, 'Doctor profile updated successfully', [
+    'doctor_profile' => $profile->only([
+        'about_me',
+        'years_of_experience',
+        'specialty_id',
+        'certificate',
+        'appointment_duration',
+        'status'
+    ]),
+    'user' => $user->only([
+        'full_name',
+        'gender',
+        'birthdate',
+        'profile_photo',
+        'address'
+    ]),
+    'note' => $statusNote
+]);
+}
+    public function show()
+{
+    $user = Auth::user();
+
+    // تأكد أنه لديه بروفايل دكتور
+    $profile = $this->doctorProfileRepo->getByUserId($user->id);
+
+    if (!$profile) {
+        return $this->unifiedResponse(false, 'Doctor profile not found');
     }
 
-    $user->save();
-
-    return $this->unifiedResponse(true, 'Doctor profile saved successfully', [
-    'doctor_profile' => [
-        'about_me' => $profile->about_me,
-        'years_of_experience' => $profile->years_of_experience,
-        'specialty_id' => $profile->specialty_id,
-        'certificate' => $profile->certificate,
-        "appointment_duration"=> $profile->appointment_duration,
-        'status' => $profile->status,
-    ],
-    'user' => [
-        'full_name' => $user->full_name,
-        'gender' => $user->gender,
-        'birthdate' => $user->birthdate,
-        'profile_photo' => $user->profile_photo,
-        'address' => $user->address,
-    ]
-]);
-
+    // دمج بيانات user مع doctorProfile
+    return $this->unifiedResponse(true, 'Doctor profile fetched successfully', [
+        'doctor_profile' => [
+            'about_me' => $profile->about_me,
+            'years_of_experience' => $profile->years_of_experience,
+            'specialty_id' => $profile->specialty_id,
+            'certificate' => $profile->certificate,
+            'appointment_duration' => $profile->appointment_duration,
+            'status' => $profile->status,
+        ],
+        'user' => [
+            'full_name' => $user->full_name,
+            'profile_photo' => $user->profile_photo,
+            'birthdate' => $user->birthdate,
+            'gender' => $user->gender,
+            'address' => $user->address,
+        ]
+    ]);
 }
 
-
-    public function show()
-    {
-        $profile = $this->doctorProfileRepo->getByUserId(Auth::id());
-
-        if (!$profile) {
-            return $this->unifiedResponse(false, 'Doctor profile not found');
-        }
-
-        return $this->unifiedResponse(true, 'Doctor profile fetched successfully', $profile);
-    }
 }
 

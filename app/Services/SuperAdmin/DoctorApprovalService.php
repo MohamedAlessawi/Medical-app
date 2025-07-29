@@ -24,18 +24,12 @@ class DoctorApprovalService
         return [
             'doctor_profile' => [
                 'id' => $doctor->id,
-                'about_me' => $doctor->about_me,
-                'years_of_experience' => $doctor->years_of_experience,
                 'specialty_id' => $doctor->specialty_id,
                 'certificate' => $doctor->certificate,
                 'status' => $doctor->status,
             ],
             'user' => [
                 'full_name' => $doctor->user->full_name,
-                'profile_photo' => $doctor->user->profile_photo,
-                'birthdate' => $doctor->user->birthdate,
-                'gender' => $doctor->user->gender,
-                'address' => $doctor->user->address,
             ]
         ];
     });

@@ -13,7 +13,6 @@ class EnsureDoctorApproved
     {
         $user = Auth::user();
 
-        // فقط إذا كان المستخدم طبيب
         if ($user->roles->contains('name', 'doctor'))
 {
             $profile = $user->doctorProfile;
