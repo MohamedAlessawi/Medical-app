@@ -30,7 +30,7 @@ class SecretaryProfileController extends Controller
         return $this->secretaryService->updateProfile($userId, $data);
     }
 
-    
+
     public function updateProfilePhoto(Request $request)
     {
         $userId = $request->user()->id;

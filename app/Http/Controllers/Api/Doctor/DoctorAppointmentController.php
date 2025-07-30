@@ -32,5 +32,10 @@ class DoctorAppointmentController extends Controller
 {
     return $this->appointmentService->getPastAppointments($request);
 }
+public function pastVisits($patientId)
+{
+    return $this->appointmentService->getPastVisitsForPatient($patientId);
+}
+
 
 }
