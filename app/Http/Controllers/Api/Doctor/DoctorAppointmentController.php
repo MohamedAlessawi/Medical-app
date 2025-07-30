@@ -24,10 +24,10 @@ class DoctorAppointmentController extends Controller
         return $this->appointmentService->showAppointment($id);
     }
 
-    public function confirmAttendance(Request $request, $id)
-    {
-        return $this->appointmentService->confirmAttendance($id, $request->all());
-    }
+    // public function confirmAttendance(Request $request, $id)
+    // {
+    //     return $this->appointmentService->confirmAttendance($id, $request->all());
+    // }
     public function pastAppointments(Request $request)
 {
     return $this->appointmentService->getPastAppointments($request);

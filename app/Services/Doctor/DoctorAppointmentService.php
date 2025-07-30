@@ -80,33 +80,33 @@ class DoctorAppointmentService
     return $this->unifiedResponse(true, 'Past appointments fetched successfully.', $appointments);
 }
 
-    public function confirmAttendance($id, $data)
-    {
-        $doctor = Auth::user()->doctor;
+    // public function confirmAttendance($id, $data)
+    // {
+    //     $doctor = Auth::user()->doctor;
 
-        $appointment = Appointment::where('id', $id)
-            ->where('doctor_id', $doctor->id)
-            ->where('status', 'confirmed')
-            ->first();
+    //     $appointment = Appointment::where('id', $id)
+    //         ->where('doctor_id', $doctor->id)
+    //         ->where('status', 'confirmed')
+    //         ->first();
 
-        if (!$appointment) {
-            return $this->unifiedResponse(false, 'Appointment not found or unauthorized.', [], [], 404);
-        }
+    //     if (!$appointment) {
+    //         return $this->unifiedResponse(false, 'Appointment not found or unauthorized.', [], [], 404);
+    //     }
 
-        if (now()->lt($appointment->appointment_date)) {
-            return $this->unifiedResponse(false, 'You cannot confirm attendance before the appointment time.', [], [], 403);
-        }
+    //     if (now()->lt($appointment->appointment_date)) {
+    //         return $this->unifiedResponse(false, 'You cannot confirm attendance before the appointment time.', [], [], 403);
+    //     }
 
-        $validatedStatus = $data['attendance_status'] ?? null;
-        if (!in_array($validatedStatus, ['present', 'absent'])) {
-            return $this->unifiedResponse(false, 'Invalid attendance status.', [], [], 422);
-        }
+    //     $validatedStatus = $data['attendance_status'] ?? null;
+    //     if (!in_array($validatedStatus, ['present', 'absent'])) {
+    //         return $this->unifiedResponse(false, 'Invalid attendance status.', [], [], 422);
+    //     }
 
-        $appointment->attendance_status = $validatedStatus;
-        $appointment->notes = $data['notes'] ?? null;
-        $appointment->save();
+    //     $appointment->attendance_status = $validatedStatus;
+    //     $appointment->notes = $data['notes'] ?? null;
+    //     $appointment->save();
 
-        return $this->unifiedResponse(true, 'Attendance confirmed.', $appointment);
-    }
+    //     return $this->unifiedResponse(true, 'Attendance confirmed.', $appointment);
+    // }
 }
 

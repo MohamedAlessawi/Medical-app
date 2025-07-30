@@ -20,8 +20,7 @@ use App\Http\Controllers\SuperAdmin\UserManagementController;
 use App\Http\Controllers\SuperAdmin\DashboardController;
 use App\Http\Controllers\SuperAdmin\ReportController;
 use App\Http\Controllers\Api\Doctor\DoctorProfileController;
-
-
+use App\Http\Controllers\Secretary\SecretaryProfileController;
 
 
 /*
@@ -74,7 +73,7 @@ Route::middleware(['auth:sanctum', 'role:doctor', 'doctor.approved'])->group(fun
     Route::post('doctor/profile', [DoctorProfileController::class, 'storeOrUpdate']);
     Route::get('doctor/appointments', [DoctorAppointmentController::class, 'index']);
     Route::get('doctor/appointments/{id}', [DoctorAppointmentController::class, 'show']);
-    Route::put('doctor/appointments/{id}/attendance', [DoctorAppointmentController::class, 'confirmAttendance']);
+    // Route::put('doctor/appointments/{id}/attendance', [DoctorAppointmentController::class, 'confirmAttendance']);
     Route::get('doctor/past-appointments', [DoctorAppointmentController::class, 'pastAppointments']);
 });
 
@@ -131,7 +130,6 @@ Route::middleware(['auth:sanctum', 'role:secretary'])->prefix('secretary')->grou
     Route::get('/patients/{id}', [PatientController::class, 'show']);
     Route::put('/patients/{id}', [PatientController::class, 'update']);
     Route::put('/patients/{id}/profile', [PatientController::class, 'updateProfile']);
-    Route::post('/patients/{id}/upload-medical-file', [PatientController::class, 'uploadMedicalFile']);//malek
 
     Route::get('/doctors', [DoctorController::class, 'index']);
     Route::get('/doctors/{id}', [DoctorController::class, 'show']);
@@ -149,4 +147,12 @@ Route::middleware(['auth:sanctum', 'role:secretary'])->prefix('secretary')->grou
     Route::put('/appointments/{id}', [DoctorController::class, 'updateAppointment']);
     Route::delete('/appointments/{id}', [DoctorController::class, 'deleteAppointment']);
     Route::put('/appointments/{id}/attendance', [DoctorController::class, 'confirmAttendance']);
+    Route::get('/dashboard-stats', [DoctorController::class, 'dashboardStats']);
+    Route::get('/appointments/today', [DoctorController::class, 'todaysAppointmentsForCenter']);
+    Route::post('/patients/{id}/upload-medical-file', [PatientController::class, 'uploadMedicalFile']);
+
+    //new
+    Route::get('/profile', [SecretaryProfileController::class, 'getProfile']);
+    Route::put('/profile', [SecretaryProfileController::class, 'updateProfile']);
+    Route::post('/profile/photo', [SecretaryProfileController::class, 'updateProfilePhoto']);
 });
