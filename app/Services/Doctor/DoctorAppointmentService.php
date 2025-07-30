@@ -108,5 +108,33 @@ class DoctorAppointmentService
 
     //     return $this->unifiedResponse(true, 'Attendance confirmed.', $appointment);
     // }
+  public function getPastVisitsForPatient($patientId)
+{
+    $doctor = Auth::user()->doctor;
+
+    if (!$doctor) {
+        return $this->unifiedResponse(false, 'You are not linked to a center as a doctor.', [], [], 403);
+    }
+
+    $hasRelation = Appointment::where('doctor_id', $doctor->id)
+        ->where('booked_by', $patientId)
+        ->exists();
+
+    if (!$hasRelation) {
+        return $this->unifiedResponse(false, 'You have no appointment history with this patient.', [], [], 403);
+    }
+
+    $appointments = Appointment::with('user:id,full_name,email,phone')
+        ->where('doctor_id', $doctor->id)
+        ->where('booked_by', $patientId)
+        ->where('status', 'confirmed')
+        ->where('appointment_date', '<', now())
+        ->orderByDesc('appointment_date')
+        ->get();
+
+    return $this->unifiedResponse(true, 'Past visits for this patient fetched successfully.', $appointments);
+}
+
+
 }
 

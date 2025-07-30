@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\Doctor\DoctorAppointmentController;
 use App\Http\Controllers\SuperAdmin\SuperAdminController;
 use App\Http\Controllers\Secretary\PatientController;
 use App\Http\Controllers\Secretary\DoctorController;
+use App\Http\Controllers\Secretary\SecretaryProfileController;
 use App\Http\Controllers\SuperAdmin\DoctorApprovalController;
 use App\Http\Controllers\SuperAdmin\LicenseController;
 use App\Http\Controllers\SuperAdmin\CenterController;
@@ -20,7 +21,6 @@ use App\Http\Controllers\SuperAdmin\UserManagementController;
 use App\Http\Controllers\SuperAdmin\DashboardController;
 use App\Http\Controllers\SuperAdmin\ReportController;
 use App\Http\Controllers\Api\Doctor\DoctorProfileController;
-use App\Http\Controllers\Secretary\SecretaryProfileController;
 
 
 /*
@@ -75,6 +75,8 @@ Route::middleware(['auth:sanctum', 'role:doctor', 'doctor.approved'])->group(fun
     Route::get('doctor/appointments/{id}', [DoctorAppointmentController::class, 'show']);
     // Route::put('doctor/appointments/{id}/attendance', [DoctorAppointmentController::class, 'confirmAttendance']);
     Route::get('doctor/past-appointments', [DoctorAppointmentController::class, 'pastAppointments']);
+    Route::get('doctor/appointments/patient/{patientId}/visits', [DoctorAppointmentController::class, 'pastVisits']);
+
 });
 
 
@@ -125,6 +127,10 @@ Route::middleware(['auth:sanctum', 'role:super_admin'])->prefix('superadmin')->g
 
 //Secretary
 Route::middleware(['auth:sanctum', 'role:secretary'])->prefix('secretary')->group(function () {
+
+    Route::get('/doctors/search', [DoctorController::class, 'search']);
+    Route::get('/patients/search', [PatientController::class, 'search']);
+
     Route::post('/patients', [PatientController::class, 'store']);
     Route::get('/patients', [PatientController::class, 'index']);
     Route::get('/patients/{id}', [PatientController::class, 'show']);
@@ -139,14 +145,13 @@ Route::middleware(['auth:sanctum', 'role:secretary'])->prefix('secretary')->grou
     Route::put('/doctors/working-hours/{hour_id}', [DoctorController::class, 'updateWorkingHour']);
     Route::delete('/doctors/working-hours/{hour_id}', [DoctorController::class, 'deleteWorkingHour']);
 
-    Route::get('/doctors/search', [DoctorController::class, 'search']);
-    Route::get('/patients/search', [PatientController::class, 'search']);
-    //malek
+    /////////////////////////
     Route::get('/doctors/{id}/appointments', [DoctorController::class, 'getAppointments']);
     Route::post('/doctors/book-appointment', [DoctorController::class, 'bookAppointment']);
     Route::put('/appointments/{id}', [DoctorController::class, 'updateAppointment']);
     Route::delete('/appointments/{id}', [DoctorController::class, 'deleteAppointment']);
     Route::put('/appointments/{id}/attendance', [DoctorController::class, 'confirmAttendance']);
+
     Route::get('/dashboard-stats', [DoctorController::class, 'dashboardStats']);
     Route::get('/appointments/today', [DoctorController::class, 'todaysAppointmentsForCenter']);
     Route::post('/patients/{id}/upload-medical-file', [PatientController::class, 'uploadMedicalFile']);
