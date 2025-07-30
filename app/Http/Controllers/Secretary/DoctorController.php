@@ -81,5 +81,15 @@ class DoctorController extends Controller
         $status = $request->input('attendance_status');
         return $this->appointmentService->confirmAttendance($id, $status);
     }
+
+    public function dashboardStats()
+    {
+        return $this->appointmentService->getDashboardStats();
+    }
+
+    public function todaysAppointmentsForCenter()
+    {
+        return $this->appointmentService->getTodaysAppointmentsForCenter();
+    }
 }
 

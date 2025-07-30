@@ -3,6 +3,8 @@
 namespace App\Services\Secretary;
 
 use App\Models\Appointment;
+use App\Models\MedicalFile;
+use App\Models\User;
 use App\Traits\ApiResponseTrait;
 use Carbon\Carbon;
 
@@ -24,7 +26,7 @@ class AppointmentService
 
     public function createAppointment($data)
     {
-        // تحقق من عدم وجود تعارض في الموعد
+        
         $exists = Appointment::where('doctor_id', $data['doctor_id'])
             ->where('appointment_date', $data['appointment_date'])
             ->exists();
@@ -48,7 +50,7 @@ class AppointmentService
         if (!$appointment) {
             return $this->unifiedResponse(false, 'Appointment not found.', [], [], 404);
         }
-        // تحقق من التعارض إذا تم تغيير الطبيب أو الوقت
+
         if ((isset($data['doctor_id']) && $data['doctor_id'] != $appointment->doctor_id) || (isset($data['appointment_date']) && $data['appointment_date'] != $appointment->appointment_date)) {
             $exists = Appointment::where('doctor_id', $data['doctor_id'] ?? $appointment->doctor_id)
                 ->where('appointment_date', $data['appointment_date'] ?? $appointment->appointment_date)
@@ -86,5 +88,60 @@ class AppointmentService
         $appointment->save();
         return $this->unifiedResponse(true, 'Attendance status updated successfully.', $appointment);
     }
+
+    public function getDashboardStats()
+    {
+        $centerId = auth()->user()->secretaries->first()->center_id;
+
+        $pendingAppointments = Appointment::whereHas('doctor', function($q) use ($centerId) {
+            $q->where('center_id', $centerId);
+        })->where('status', 'pending')->count();
+
+        $newFiles = MedicalFile::whereDate('upload_date', now()->toDateString())
+            ->whereHas('user.userCenters', function($q) use ($centerId) {
+                $q->where('center_id', $centerId);
+            })->count();
+
+        $todaysAppointments = Appointment::whereHas('doctor', function($q) use ($centerId) {
+            $q->where('center_id', $centerId);
+        })->whereDate('appointment_date', now()->toDateString())->count();
+
+        $totalPatients = User::whereHas('userCenters', function($q) use ($centerId) {
+            $q->where('center_id', $centerId);
+        })->whereHas('roles', function($q) {
+            $q->where('name', 'patient');
+        })->count();
+        return $this->unifiedResponse(true, 'Dashboard stats fetched successfully', [
+            'pending_appointments' => $pendingAppointments,
+            'new_files' => $newFiles,
+            'todays_appointments' => $todaysAppointments,
+            'total_patients' => $totalPatients,
+        ]);
+    }
+
+    public function getTodaysAppointmentsForCenter()
+    {
+        $centerId = auth()->user()->secretaries->first()->center_id;
+        $appointments = Appointment::whereHas('doctor', function($q) use ($centerId) {
+                $q->where('center_id', $centerId);
+            })
+            ->whereDate('appointment_date', now()->toDateString())
+            ->with([
+                'user:id,full_name',
+                'doctor.user:id,full_name',
+                'doctor.doctorProfile:id,user_id,specialization,visit_type'
+            ])
+            ->orderBy('appointment_date')
+            ->get()
+            ->map(function($appointment) {
+                return [
+                    'status' => $appointment->status,
+                    'time' => date('H:i', strtotime($appointment->appointment_date)),
+                    'patient_name' => $appointment->user->full_name ?? null,
+                    'doctor_name' => $appointment->doctor->user->full_name ?? null,
+                    'visit_type' => $appointment->doctor->doctorProfile->visit_type ?? ($appointment->notes ?? null),
+                ];
+            });
+        return $this->unifiedResponse(true, 'Today\'s appointments fetched successfully', $appointments);
+    }
 }
- 
