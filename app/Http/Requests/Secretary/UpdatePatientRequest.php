@@ -4,6 +4,7 @@ namespace App\Http\Requests\Secretary;
 
 use Illuminate\Foundation\Http\FormRequest;
 
+
 class UpdatePatientRequest extends FormRequest
 {
     /**
@@ -12,8 +13,11 @@ class UpdatePatientRequest extends FormRequest
     public function authorize(): bool
     {
         return true;
+
+
     }
 
+    ////////////////////////////////////
     /**
      * Get the validation rules that apply to the request.
      *
@@ -30,6 +34,9 @@ class UpdatePatientRequest extends FormRequest
             'condition' => 'nullable|string',
             'last_visit' => 'nullable|date',
             'status' => 'nullable|string',
+
+
+
         ];
     }
 }
