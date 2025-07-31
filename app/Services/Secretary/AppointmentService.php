@@ -26,7 +26,7 @@ class AppointmentService
 
     public function createAppointment($data)
     {
-        
+
         $exists = Appointment::where('doctor_id', $data['doctor_id'])
             ->where('appointment_date', $data['appointment_date'])
             ->exists();
@@ -144,4 +144,5 @@ class AppointmentService
             });
         return $this->unifiedResponse(true, 'Today\'s appointments fetched successfully', $appointments);
     }
+
 }
