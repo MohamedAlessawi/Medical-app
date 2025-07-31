@@ -31,7 +31,6 @@ class DoctorProfileService
         return $this->unifiedResponse(false, 'Doctor profile not found. Please complete registration first.', [], [], 404);
     }
 
-    // ✅ القواعد الجديدة (كلها nullable لأنه تعديل فقط)
     $rules = [
         'profile_photo' => 'nullable|image|max:2048',
         'birthdate' => 'nullable|date',
@@ -47,11 +46,9 @@ class DoctorProfileService
 
     $validated = Validator::make($request->all(), $rules)->validate();
 
-    // ✅ معالجة الملفات
     $certificatePath = $this->handleFileUpload($request, 'certificate', 'certificates');
     $profilePhotoPath = $this->handleFileUpload($request, 'profile_photo', 'profile_photos');
 
-    // ✅ تحديث doctor_profiles
     $profile->update([
     'about_me' => $validated['about_me'] ?? $profile->about_me,
     'specialty_id' => $validated['specialty_id'] ?? $profile->specialty_id,
@@ -63,7 +60,6 @@ class DoctorProfileService
 $statusNote = $certificatePath ? 'Status reverted to pending due to certificate update.' : null;
 
 
-    // ✅ تحديث جدول users
     $user->update([
         'gender' => $validated['gender'] ?? $user->gender,
         'birthdate' => $validated['birthdate'] ?? $user->birthdate,
@@ -94,14 +90,12 @@ $statusNote = $certificatePath ? 'Status reverted to pending due to certificate 
 {
     $user = Auth::user();
 
-    // تأكد أنه لديه بروفايل دكتور
     $profile = $this->doctorProfileRepo->getByUserId($user->id);
 
     if (!$profile) {
         return $this->unifiedResponse(false, 'Doctor profile not found');
     }
 
-    // دمج بيانات user مع doctorProfile
     return $this->unifiedResponse(true, 'Doctor profile fetched successfully', [
         'doctor_profile' => [
             'about_me' => $profile->about_me,
