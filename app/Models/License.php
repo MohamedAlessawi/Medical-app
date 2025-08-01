@@ -11,6 +11,7 @@ class License extends Model
 
     protected $fillable = [
         'user_id',
+        'center_id',
         'status',
         'issued_by',
         'issue_date',
