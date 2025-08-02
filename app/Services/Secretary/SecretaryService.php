@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Traits\ApiResponseTrait;
 use App\Traits\FileUploadTrait;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class SecretaryService
 {
@@ -19,7 +20,7 @@ class SecretaryService
         if (!$user) {
             return $this->unifiedResponse(false, 'Secretary not found.', [], [], 404);
         }
-        
+
         $secretary = Secretary::where('user_id', $userId)->first();
         $data = [
             'id' => $user->id,
@@ -41,13 +42,27 @@ class SecretaryService
         if (!$user) {
             return $this->unifiedResponse(false, 'Secretary not found.', [], [], 404);
         }
-        $user->update([
-            'full_name' => $data['full_name'] ?? $user->full_name,
-            'email' => $data['email'] ?? $user->email,
-            'phone' => $data['phone'] ?? $user->phone,
-            'address' => $data['address'] ?? $user->address,
-        ]);
-        return $this->unifiedResponse(true, 'Secretary profile updated successfully.', $user);
+
+
+        $updateData = [];
+        if (isset($data['full_name'])) {
+            $updateData['full_name'] = $data['full_name'];
+        }
+        if (isset($data['email'])) {
+            $updateData['email'] = $data['email'];
+        }
+        if (isset($data['phone'])) {
+            $updateData['phone'] = $data['phone'];
+        }
+        if (isset($data['address'])) {
+            $updateData['address'] = $data['address'];
+        }
+
+        $user->update($updateData);
+
+
+        $updatedUser = User::find($userId);
+        return $this->unifiedResponse(true, 'Secretary profile updated successfully.', $updatedUser);
     }
 
 
@@ -57,12 +72,29 @@ class SecretaryService
         if (!$user) {
             return $this->unifiedResponse(false, 'Secretary not found.', [], [], 404);
         }
-        $path = $this->handleFileUpload($request, 'profile_photo', 'profile_photos');
+
+        if (!$request->hasFile('photo')) {
+            return $this->unifiedResponse(false, 'No photo uploaded.', [], [], 400);
+        }
+        
+        $file = $request->file('photo');
+        $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+
+        if (!in_array($file->getMimeType(), $allowedTypes)) {
+            return $this->unifiedResponse(false, 'Invalid file type. Only images are allowed.', [], [], 400);
+        }
+
+        $path = $this->handleFileUpload($request, 'photo', 'profile_photos');
         if ($path) {
+
+            if ($user->profile_photo && Storage::disk('public')->exists($user->profile_photo)) {
+                Storage::disk('public')->delete($user->profile_photo);
+            }
+
             $user->profile_photo = $path;
             $user->save();
             return $this->unifiedResponse(true, 'Profile photo updated successfully.', ['profile_photo' => $path]);
         }
-        return $this->unifiedResponse(false, 'No photo uploaded.', [], [], 400);
+        return $this->unifiedResponse(false, 'Failed to upload photo.', [], [], 400);
     }
 }

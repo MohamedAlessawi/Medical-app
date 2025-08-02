@@ -45,4 +45,26 @@ class Center extends Model
         return $this->hasMany(Doctor::class, 'center_id');
     }
 
+    public function appointmentRequests()
+    {
+        return $this->hasMany(AppointmentRequest::class, 'center_id');
+    }
+
+
+    public function getDoctorsCountAttribute()
+    {
+        return $this->doctors()->count();
+    }
+
+
+    public function getSpecialtiesCountAttribute()
+    {
+        return $this->doctors()
+            ->whereHas('user.doctorProfile.specialty')
+            ->get()
+            ->pluck('user.doctorProfile.specialty_id')
+            ->unique()
+            ->count();
+    }
+
 }

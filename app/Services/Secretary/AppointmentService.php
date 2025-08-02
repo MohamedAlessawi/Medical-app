@@ -26,9 +26,10 @@ class AppointmentService
 
     public function createAppointment($data)
     {
-        
+
         $exists = Appointment::where('doctor_id', $data['doctor_id'])
             ->where('appointment_date', $data['appointment_date'])
+            ->where('status', '!=', 'cancelled')
             ->exists();
         if ($exists) {
             return $this->unifiedResponse(false, 'Appointment already exists for this doctor at this time.', [], [], 409);
@@ -55,6 +56,7 @@ class AppointmentService
             $exists = Appointment::where('doctor_id', $data['doctor_id'] ?? $appointment->doctor_id)
                 ->where('appointment_date', $data['appointment_date'] ?? $appointment->appointment_date)
                 ->where('id', '!=', $id)
+                ->where('status', '!=', 'cancelled')
                 ->exists();
             if ($exists) {
                 return $this->unifiedResponse(false, 'Another appointment exists for this doctor at this time.', [], [], 409);

@@ -15,4 +15,17 @@ class Specialty extends Model
     {
         return $this->hasMany(DoctorProfile::class, 'specialty_id');
     }
+
+
+    
+    public function getDoctorsCountAttribute()
+    {
+        return $this->doctors()->count();
+    }
+
+
+    public function getActiveDoctorsAttribute()
+    {
+        return $this->doctors()->where('status', 'approved')->get();
+    }
 }

@@ -26,14 +26,27 @@ class SecretaryProfileController extends Controller
     public function updateProfile(Request $request)
     {
         $userId = $request->user()->id;
-        $data = $request->only(['full_name', 'email', 'phone', 'address']);
-        return $this->secretaryService->updateProfile($userId, $data);
+
+        $validated = $request->validate([
+            'full_name' => 'sometimes|string|max:255',
+            'email' => 'sometimes|email|unique:users,email,' . $userId,
+            'phone' => 'sometimes|string|max:20',
+            'address' => 'sometimes|string|max:500',
+        ]);
+
+        return $this->secretaryService->updateProfile($userId, $validated);
     }
 
-    
+
     public function updateProfilePhoto(Request $request)
     {
         $userId = $request->user()->id;
+
+
+        $request->validate([
+            'photo' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:2048'
+        ]);
+
         return $this->secretaryService->updateProfilePhoto($request, $userId);
     }
 }
