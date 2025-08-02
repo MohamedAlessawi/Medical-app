@@ -84,8 +84,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
 });
 //Doctor
-
-Route::middleware(['auth:sanctum', 'role:doctor', 'doctor.approved'])->group(function () {
+Route::middleware(['auth:sanctum', 'role:doctor'])->group(function () {
+    Route::post('doctor/profile', [DoctorProfileController::class, 'storeOrUpdate']);
     Route::get('doctor/profile', [DoctorProfileController::class, 'show']);
     Route::post('doctor/profile', [DoctorProfileController::class, 'storeOrUpdate']);
 
@@ -93,16 +93,9 @@ Route::middleware(['auth:sanctum', 'role:doctor', 'doctor.approved'])->group(fun
 
 
 
-
-// //Super-Admin
-// Route::middleware(['auth:sanctum', 'role:super_admin'])
-//     ->post('/superadmin/register-center-admin', [SuperAdminController::class, 'registerCenterAdmin']);
-
-Route::middleware(['auth:sanctum', 'role:super_admin'])->prefix('super-admin')->group(function () {
-    Route::get('/doctors/pending', [DoctorApprovalController::class, 'listPending']);
-    Route::post('/doctors/{id}/approve', [DoctorApprovalController::class, 'approve']);
-    Route::post('/doctors/{id}/reject', [DoctorApprovalController::class, 'reject']);
-});
+//Super-Admin
+Route::middleware(['auth:sanctum', 'role:super_admin'])
+    ->post('/superadmin/register-center-admin', [SuperAdminController::class, 'registerCenterAdmin']);
 
 Route::middleware(['auth:sanctum', 'role:super_admin'])->prefix('superadmin')->group(function () {
     //انشاء مركز وربطه مع المدير
