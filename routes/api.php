@@ -8,6 +8,8 @@ use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\TwoFactorController;
 use App\Http\Controllers\Auth\AdminUserController;
 use \App\Http\Controllers\Api\Patient\PatientProfileController;
+use \App\Http\Controllers\Api\Patient\PatientAppointmentController;
+
 use App\Http\Controllers\Api\Doctor\DoctorProfileController;
 use App\Http\Controllers\SuperAdmin\SuperAdminController;
 use App\Http\Controllers\Secretary\PatientController;
@@ -20,6 +22,7 @@ use App\Http\Controllers\SuperAdmin\UserManagementController;
 use App\Http\Controllers\SuperAdmin\DashboardController;
 use App\Http\Controllers\SuperAdmin\ReportController;
 use App\Http\Controllers\Secretary\SecretaryProfileController;
+use App\Http\Controllers\Secretary\AppointmentRequestController;
 
 
 /*
@@ -64,6 +67,21 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/patient/profile', [PatientProfileController::class, 'show']);
     Route::put('/patient/profile', [PatientProfileController::class, 'update']);
+
+
+    Route::get('/patient/centers', [PatientAppointmentController::class, 'getCenters']);
+    Route::get('/patient/specialties', [PatientAppointmentController::class, 'getSpecialties']);
+    Route::get('/patient/centers/{centerId}/specialties/{specialtyId}/doctors', [PatientAppointmentController::class, 'getDoctorsByCenterAndSpecialty']);
+    Route::get('/patient/doctors/{doctorId}/centers', [PatientAppointmentController::class, 'getDoctorCenters']);
+
+
+    Route::get('/patient/doctors/{doctorId}/centers/{centerId}/available-slots', [PatientAppointmentController::class, 'getAvailableSlots']);
+
+
+    Route::post('/patient/appointment-requests', [PatientAppointmentController::class, 'requestAppointment']);
+    Route::get('/patient/appointment-requests', [PatientAppointmentController::class, 'getAppointmentRequests']);
+
+
 });
 //Doctor
 
@@ -136,7 +154,9 @@ Route::middleware(['auth:sanctum', 'role:secretary'])->prefix('secretary')->grou
 
     Route::get('/doctors/search', [DoctorController::class, 'search']);
     Route::get('/patients/search', [PatientController::class, 'search']);
+
     //malek
+
     Route::get('/doctors/{id}/appointments', [DoctorController::class, 'getAppointments']);
     Route::post('/doctors/book-appointment', [DoctorController::class, 'bookAppointment']);
     Route::put('/appointments/{id}', [DoctorController::class, 'updateAppointment']);
@@ -146,8 +166,15 @@ Route::middleware(['auth:sanctum', 'role:secretary'])->prefix('secretary')->grou
     Route::get('/appointments/today', [DoctorController::class, 'todaysAppointmentsForCenter']);
     Route::post('/patients/{id}/upload-medical-file', [PatientController::class, 'uploadMedicalFile']);
 
-    //new
+
     Route::get('/profile', [SecretaryProfileController::class, 'getProfile']);
     Route::put('/profile', [SecretaryProfileController::class, 'updateProfile']);
     Route::post('/profile/photo', [SecretaryProfileController::class, 'updateProfilePhoto']);
+
+
+    Route::get('/appointment-requests', [AppointmentRequestController::class, 'index']);
+    Route::get('/appointment-requests/{id}', [AppointmentRequestController::class, 'show']);
+    Route::post('/appointment-requests/{id}/approve', [AppointmentRequestController::class, 'approve']);
+    Route::post('/appointment-requests/{id}/reject', [AppointmentRequestController::class, 'reject']);
+    Route::get('/appointment-requests-stats', [AppointmentRequestController::class, 'stats']);
 });
