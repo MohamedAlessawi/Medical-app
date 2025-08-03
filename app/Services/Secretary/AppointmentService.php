@@ -146,4 +146,5 @@ class AppointmentService
             });
         return $this->unifiedResponse(true, 'Today\'s appointments fetched successfully', $appointments);
     }
+
 }

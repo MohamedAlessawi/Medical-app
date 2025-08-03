@@ -1,16 +1,17 @@
 <?php
-
 namespace App\Services\Secretary;
 
-use App\Models\{User, PatientProfile, UserCenter};
+use App\Models\{User, UserCenter};
 use App\Repositories\UserRepository;
 use App\Traits\ApiResponseTrait;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Arr;
+
 use Exception;
+use Carbon\Carbon;
 
 class PatientService
 {
@@ -23,17 +24,15 @@ class PatientService
         $this->userRepository = $userRepository;
     }
 
-
     public function createPatientFromSecretary(array $data)
     {
         try {
             DB::beginTransaction();
 
+            $centerId = Auth::user()->secretaries->first()->center_id;
             $existingUser = $this->userRepository->findByEmailOrPhone($data['email'] ?? $data['phone']);
 
             if ($existingUser) {
-                $centerId = Auth::user()->secretaries->first()->center_id;
-
                 $alreadyLinked = UserCenter::where('user_id', $existingUser->id)
                     ->where('center_id', $centerId)
                     ->exists();
@@ -46,25 +45,13 @@ class PatientService
 
                 $this->userRepository->attachRole($existingUser->id, 'patient');
 
-                UserCenter::firstOrCreate([
-                    'user_id' => $existingUser->id,
-                    'center_id' => Auth::user()->secretaries->first()->center_id
+                UserCenter::create([
+                    'user_id'   => $existingUser->id,
+                    'center_id' => $centerId,
+                    'condition' => $data['condition'] ?? null,
+                    'last_visit'=> $data['last_visit'] ?? null,
+                    'status'    => $data['status'] ?? null,
                 ]);
-
-                $fieldsToUpdate = [];
-                if (is_null($existingUser->birthdate) && !empty($data['birthdate'])) {
-                    $fieldsToUpdate['birthdate'] = $data['birthdate'];
-                }
-                if (is_null($existingUser->gender) && !empty($data['gender'])) {
-                    $fieldsToUpdate['gender'] = $data['gender'];
-                }
-                if (is_null($existingUser->address) && !empty($data['address'])) {
-                    $fieldsToUpdate['address'] = $data['address'];
-                }
-
-                if (!empty($fieldsToUpdate)) {
-                    $existingUser->update($fieldsToUpdate);
-                }
 
                 DB::commit();
                 return $this->unifiedResponse(true, 'Existing user attached to center as patient.', ['user_id' => $existingUser->id], [], 200);
@@ -74,20 +61,23 @@ class PatientService
 
             $user = $this->userRepository->create([
                 'full_name' => $data['full_name'],
-                'email' => $data['email'],
-                'phone' => $data['phone'],
-                'gender' => $data['gender'],
+                'email'     => $data['email'],
+                'phone'     => $data['phone'],
+                'gender'    => $data['gender'],
                 'birthdate' => $data['birthdate'],
-                'address' => $data['address'],
-                'password' => Hash::make($password),
-                'ip_address' => request()->ip(),
+                'address'   => $data['address'],
+                'password'  => Hash::make($password),
+                'ip_address'=> request()->ip(),
             ]);
 
             $this->userRepository->attachRole($user->id, 'patient');
 
             UserCenter::create([
-                'user_id' => $user->id,
-                'center_id' => Auth::user()->secretaries->first()->center_id
+                'user_id'   => $user->id,
+                'center_id' => $centerId,
+                'condition' => $data['condition'] ?? null,
+                'last_visit'=> $data['last_visit'] ?? null,
+                'status'    => $data['status'] ?? null,
             ]);
 
             Mail::raw("Your account has been created. Email: {$user->email}, Password: {$password}", function ($message) use ($user) {
@@ -110,111 +100,90 @@ class PatientService
 
         $patients = User::whereHas('userCenters', fn($q) => $q->where('center_id', $centerId))
             ->whereHas('roles', fn($q) => $q->where('name', 'patient'))
-            ->with('patientProfile')
+            ->with(['userCenters' => fn($q) => $q->where('center_id', $centerId)])
             ->get()
-            ->map(fn($user) => [
-                'id' => $user->id,
-                'full_name' => $user->full_name,
-                'email' => $user->email,
-                'phone' => $user->phone,
-                // 'birthdate' => $user->birthdate,
-                'age' => $user->birthdate ? \Carbon\Carbon::parse($user->birthdate)->age : null,
-                // 'gender' => $user->gender,
-                // 'address' => $user->address,
-                'patient_profile' => optional($user->patientProfile)->only(['condition', 'last_visit', 'status']),
-            ]);
+            ->map(function ($user) use ($centerId) {
+                $uc = $user->userCenters->first();
+                return [
+                    'id'         => $user->id,
+                    'full_name'  => $user->full_name,
+                    'email'      => $user->email,
+                    'phone'      => $user->phone,
+                    'age'        => $user->birthdate ? Carbon::parse($user->birthdate)->age : null,
+                    'condition'  => $uc->condition ?? null,
+                    'last_visit' => $uc->last_visit ?? null,
+                    'status'     => $uc->status ?? null,
+                ];
+            });
 
         return $this->unifiedResponse(true, 'Patients fetched successfully.', $patients);
     }
 
     public function getPatientDetails($id)
     {
-        $user = User::with('patientProfile')->find($id);
+        $centerId = Auth::user()->secretaries->first()->center_id;
+
+        $user = User::whereHas('userCenters', fn($q) => $q->where('center_id', $centerId))
+            ->with(['userCenters' => fn($q) => $q->where('center_id', $centerId)])
+            ->find($id);
+
         if (!$user) {
             return $this->unifiedResponse(false, 'Patient not found.', [], [], 404);
         }
 
-        $data = [
-            'id' => $user->id,
-            'full_name' => $user->full_name,
-            'email' => $user->email,
-            'phone' => $user->phone,
-            // 'birthdate' => $user->birthdate,
-            'age' => $user->birthdate ? \Carbon\Carbon::parse($user->birthdate)->age : null,
+        $uc = $user->userCenters->first();
 
-            // 'gender' => $user->gender,
-            // 'address' => $user->address,
-            'patient_profile' => optional($user->patientProfile)->only(['condition', 'last_visit', 'status']),
-        ];
-
-        return $this->unifiedResponse(true, 'Patient details fetched.', $data);
+        return $this->unifiedResponse(true, 'Patient details fetched.', [
+            'id'         => $user->id,
+            'full_name'  => $user->full_name,
+            'email'      => $user->email,
+            'phone'      => $user->phone,
+            'age'        => $user->birthdate ? Carbon::parse($user->birthdate)->age : null,
+            'condition'  => $uc->condition ?? null,
+            'last_visit' => $uc->last_visit ?? null,
+            'status'     => $uc->status ?? null,
+        ]);
     }
 
     public function updatePatientUnified($id, array $data)
     {
+        $centerId = Auth::user()->secretaries->first()->center_id;
+
         $user = User::find($id);
 
         if (!$user) {
             return $this->unifiedResponse(false, 'Patient not found.', [], [], 404);
         }
 
-        $user->update([
-            'full_name' => $data['full_name'] ?? $user->full_name,
-            'phone' => $data['phone'] ?? $user->phone,
-            'gender' => $data['gender'] ?? $user->gender,
-            'birthdate' => $data['birthdate'] ?? $user->birthdate,
-            'address' => $data['address'] ?? $user->address,
-        ]);
+        $uc = UserCenter::where('user_id', $id)->where('center_id', $centerId)->first();
 
-        $profile = PatientProfile::updateOrCreate(
-            ['user_id' => $user->id],
-            [
-                'condition' => $data['condition'] ?? null,
-                'last_visit' => $data['last_visit'] ?? null,
-                'status' => $data['status'] ?? null,
-            ]
-        );
+         if (!$uc) {
+            return $this->unifiedResponse(false, 'UserCenter record not found for this patient in your center.', [], [], 404);
+        }
+
+
+        UserCenter::where('user_id', $id)
+            ->where('center_id', $centerId)
+            ->update([
+                'condition'  => $data['condition'] ?? $uc->condition,
+                'last_visit' => $data['last_visit'] ?? $uc->last_visit,
+                'status'     => $data['status'] ?? $uc->status,
+            ]);
+
+        $uc = UserCenter::where('user_id', $id)
+            ->where('center_id', $centerId)
+            ->first();
 
         return $this->unifiedResponse(true, 'Patient updated successfully.', [
-            'user_id' => $user->id,
-            'full_name' => $user->full_name,
-            'email' => $user->email,
-            'phone' => $user->phone,
-            'gender' => $user->gender,
-            'birthdate' => $user->birthdate,
-            'age' => $user->birthdate ? \Carbon\Carbon::parse($user->birthdate)->age : null,
-            'address' => $user->address,
-            'condition' => $profile->condition,
-            'last_visit' => $profile->last_visit,
-            'status' => $profile->status,
+            'id'         => $user->id,
+            'full_name'  => $user->full_name,
+            'email'      => $user->email,
+            'phone'      => $user->phone,
+            'age'        => $user->birthdate ? Carbon::parse($user->birthdate)->age : null,
+            'condition'  => $uc->condition ?? null,
+            'last_visit' => $uc->last_visit ?? null,
+            'status'     => $uc->status ?? null,
         ]);
-    }
-
-
-    public function updatePatient($id, array $data)
-    {
-        $user = User::find($id);
-        if (!$user) {
-            return $this->unifiedResponse(false, 'Patient not found.', [], [], 404);
-        }
-
-        $user->update($data);
-
-        return $this->unifiedResponse(true, 'Patient updated successfully.', $user->only([
-            'id', 'full_name', 'email', 'phone', 'birthdate', 'gender', 'address'
-        ]));
-    }
-
-    public function updatePatientProfile($id, array $data)
-    {
-        $profile = PatientProfile::updateOrCreate(
-            ['user_id' => $id],
-            $data
-        );
-
-        return $this->unifiedResponse(true, 'Profile updated successfully.', $profile->only([
-            'condition', 'last_visit', 'status'
-        ]));
     }
 
     public function searchPatients($query)
@@ -227,23 +196,40 @@ class PatientService
             ->whereHas('roles', function ($q) {
                 $q->where('name', 'patient');
             })
-            ->where(function ($q) use ($query) {
+            ->where(function ($q) use ($query, $centerId) {
                 $q->where('full_name', 'like', "%$query%")
                 ->orWhere('phone', 'like', "%$query%")
-                ->orWhereHas('patientProfile', function ($sub) use ($query) {
-                    $sub->where('condition', 'like', "%$query%");
-
+                ->orWhere('email', 'like', "%$query%")
+                ->orWhereHas('userCenters', function ($uc) use ($query, $centerId) {
+                    $uc->where('center_id', $centerId)
+                        ->where(function ($sub) use ($query) {
+                            $sub->where('condition', 'like', "%$query%")
+                                ->orWhere('status', 'like', "%$query%");
+                        });
                 });
             })
-            ->with(['patientProfile:id,user_id,condition'])
-            ->get(['id', 'full_name', 'email', 'phone', 'birthdate', 'gender', 'address']);
+            ->with(['userCenters' => fn($q) => $q->where('center_id', $centerId)])
+            ->get();
 
         if ($results->isEmpty()) {
             return $this->unifiedResponse(false, 'No matching patients found.', [], [], 404);
         }
 
-        return $this->unifiedResponse(true, 'Search results', $results);
-    }
+        $formatted = $results->map(function ($user) {
+            $uc = $user->userCenters->first();
+            return [
+                'id'         => $user->id,
+                'full_name'  => $user->full_name,
+                'email'      => $user->email,
+                'phone'      => $user->phone,
+                'age'        => $user->birthdate ? Carbon::parse($user->birthdate)->age : null,
+                'condition'  => $uc->condition ?? null,
+                'last_visit' => $uc->last_visit ?? null,
+                'status'     => $uc->status ?? null,
+            ];
+        });
 
+        return $this->unifiedResponse(true, 'Search results', $formatted);
+    }
 
 }

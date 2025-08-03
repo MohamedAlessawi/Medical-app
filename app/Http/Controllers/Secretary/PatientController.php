@@ -38,17 +38,12 @@ class PatientController extends Controller
 
     public function update($id, UpdatePatientRequest $request)
     {
-        return $this->patientService->updatePatientUnified($id, $request->validated());
-    }
-
-    public function updateProfile($id, UpdatePatientProfileRequest $request)
-    {
-        return $this->patientService->updatePatientProfile($id, $request->validated());
+        return $this->patientService->updatePatientUnified($id, $request->all());
     }
 
     public function search(Request $request)
     {
-        return $this->patientService->searchPatients($request->query('query'));
+        return $this->patientService->searchPatients($request->get('query'));
     }
 
     public function uploadMedicalFile(Request $request, $id)
