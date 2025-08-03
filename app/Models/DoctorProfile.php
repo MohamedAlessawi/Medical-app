@@ -15,7 +15,8 @@ class DoctorProfile extends Model
         'about_me',
         'years_of_experience',
         'certificate',
-        'status'
+        'status',
+        'appointment_duration'
     ];
 
     public function user()
@@ -23,7 +24,30 @@ class DoctorProfile extends Model
         return $this->belongsTo(User::class);
     }
     public function specialty()
-{
-    return $this->belongsTo(Specialty::class);
-}
+    {
+        return $this->belongsTo(Specialty::class);
+    }
+
+
+    public function getSpecialtyNameAttribute()
+    {
+        return $this->specialty->name ?? null;
+    }
+
+
+    public function getStatusTextAttribute()
+    {
+        return match($this->status) {
+            'pending' => 'Pending',
+            'approved' => 'Approved',
+            'rejected' => 'Rejected',
+            default => 'Unknown'
+        };
+    }
+
+    
+    public function getIsApprovedAttribute()
+    {
+        return $this->status === 'approved';
+    }
 }
