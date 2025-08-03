@@ -70,6 +70,32 @@ class LoginLogoutService
        $user->refresh_token = $refreshToken;
        $user->refresh_token_expires_at = Carbon::now()->addMinutes(14400);
        $user->save();
+<<<<<<< HEAD
+
+       // $step = 'main_app';
+
+       // if ($user->hasRole('doctor')) {
+       //     $doctorProfile = $user->doctorProfile;
+
+       //     if (!$doctorProfile) {
+       //         $step = 'complete_profile';
+       //     } elseif ($doctorProfile->status === 'pending') {
+       //         $step = 'waiting_approval';
+       //     } elseif ($doctorProfile->status === 'rejected') {
+       //         $step = 're_register';
+       //     }
+       // }
+
+       return $this->unifiedResponse(true, 'Login successful.', [
+           'access_token' => $token,
+           'refresh_token' => $refreshToken,
+           'token_type' => 'Bearer',
+           'role' => $validated['role'],
+           //'step' => $step
+       ], [], 200);
+    }
+
+=======
 
       // if (!$user->email_verified_at) {
         //     Log::error('Email not verified for user: ' . $user->id);
@@ -109,6 +135,7 @@ class LoginLogoutService
 }
 
 
+>>>>>>> d29aa3820ab87417ec63450b0956a6aeeb26744d
     public function logout($request)
     {
         $request->user()->currentAccessToken()->delete();

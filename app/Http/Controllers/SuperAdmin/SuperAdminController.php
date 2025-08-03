@@ -10,16 +10,15 @@ use App\Services\SuperAdmin\CenterAdminRegistrationService;
 
 class SuperAdminController extends Controller
 {
+    protected $centerAdminRegistrationService;
 
     public function __construct(CenterAdminRegistrationService $centerAdminRegistrationService)
     {
         $this->centerAdminRegistrationService = $centerAdminRegistrationService;
     }
 
-   public function registerCenterAdmin(RegisterCenterAdminRequest $request)
+    public function registerCenterAdmin(RegisterCenterAdminRequest $request)
     {
-        $result = $this->centerAdminRegistrationService->registerCenterWithAdmin($request);
-        return $result;
+        return $this->centerAdminRegistrationService->registerCenterWithAdmin($request);
     }
-
 }

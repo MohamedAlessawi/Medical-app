@@ -25,4 +25,40 @@ class Appointment extends Model
     {
         return $this->hasOne(Rating::class, 'appointment_id');
     }
+
+    
+    public function getDoctorNameAttribute()
+    {
+        return $this->doctor->user->full_name ?? null;
+    }
+
+
+    public function getPatientNameAttribute()
+    {
+        return $this->user->full_name ?? null;
+    }
+
+
+    public function getCenterNameAttribute()
+    {
+        return $this->doctor->center->name ?? null;
+    }
+
+
+    public function getAppointmentDateFormattedAttribute()
+    {
+        return $this->appointment_date ? $this->appointment_date->format('Y-m-d') : null;
+    }
+
+
+    public function getAppointmentTimeFormattedAttribute()
+    {
+        return $this->appointment_date ? $this->appointment_date->format('H:i') : null;
+    }
+
+
+    public function getCreatedAtFormattedAttribute()
+    {
+        return $this->created_at ? $this->created_at->format('Y-m-d H:i') : null;
+    }
 }
