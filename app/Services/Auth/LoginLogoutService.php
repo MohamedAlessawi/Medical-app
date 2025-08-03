@@ -70,15 +70,13 @@ class LoginLogoutService
        $user->refresh_token = $refreshToken;
        $user->refresh_token_expires_at = Carbon::now()->addMinutes(14400);
        $user->save();
-
-
        return $this->unifiedResponse(true, 'Login successful.', [
            'access_token' => $token,
            'refresh_token' => $refreshToken,
            'token_type' => 'Bearer',
            'role' => $validated['role'],
+           //'step' => $step
        ], [], 200);
-
     }
 
     public function logout($request)
