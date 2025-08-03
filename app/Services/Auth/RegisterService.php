@@ -51,10 +51,10 @@ class RegisterService
             UserVerify::create(['user_id' => $user->id, 'token' => $code]);
             Cache::put($request->ip(), [$code, $request->email], now()->addMinutes(3));
 
-            Mail::send('emails.verifyEmail', ['token' => $code], function($message) use ($request) {
-                $message->to($request->email);
-                $message->subject('Email Verification Code');
-            });
+            // Mail::send('emails.verifyEmail', ['token' => $code], function($message) use ($request) {
+            //     $message->to($request->email);
+            //     $message->subject('Email Verification Code');
+            // });
 
             return $this->unifiedResponse(true, 'Registration successful, please check your email for verification code.', ['user_id' => $user->id], [], 201);
 
