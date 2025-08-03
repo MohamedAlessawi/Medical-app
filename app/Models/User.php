@@ -97,10 +97,10 @@ class User extends Authenticatable
         return $this->hasMany(License::class, 'user_id');
     }
 
-    public function doctors()
-    {
-        return $this->hasOne(Doctor::class, 'user_id');
-    }
+    public function doctor()
+{
+    return $this->hasOne(Doctor::class, 'user_id', 'id');
+}
 
     public function adminCenters()
     {
@@ -130,5 +130,5 @@ class User extends Authenticatable
         return $this->hasOne(PatientProfile::class, 'user_id');
     }
 
-    
+
 }
