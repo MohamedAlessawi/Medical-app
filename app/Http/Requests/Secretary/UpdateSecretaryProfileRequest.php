@@ -4,7 +4,7 @@ namespace App\Http\Requests\Secretary;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class CreatePatientRequest extends FormRequest
+class UpdateSecretaryProfileRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -22,15 +22,17 @@ class CreatePatientRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'full_name' => 'required|string|max:255',
-            'email' => 'required|email',
-            'phone' => 'required|string',
-            'gender' => 'required|in:male,female',
-            'birthdate' => 'required|date',
-            'address' => 'nullable|string',
-            'condition' => 'nullable|string',
-            'last_visit' => 'nullable|date',
-            'status' => 'nullable|string',
+            'full_name' => 'sometimes|string|max:255',
+            'phone'     => 'sometimes|string|max:20',
+            'email'     => 'sometimes|email',
+            'address'   => 'nullable|string|max:255',
+            'profile_photo'=> 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+
         ];
     }
+    public function all($keys = null)
+    {
+        return parent::all($keys);
+    }
+
 }
