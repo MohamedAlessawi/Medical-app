@@ -92,7 +92,6 @@ Route::middleware(['auth:sanctum', 'role:doctor'])->group(function () {
 });
 
 
-
 //Super-Admin
 Route::middleware(['auth:sanctum', 'role:super_admin'])
     ->post('/superadmin/register-center-admin', [SuperAdminController::class, 'registerCenterAdmin']);
