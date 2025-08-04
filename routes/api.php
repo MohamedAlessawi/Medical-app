@@ -171,8 +171,6 @@ Route::middleware(['auth:sanctum', 'role:secretary'])->prefix('secretary')->grou
     Route::get('/doctors/search', [DoctorController::class, 'search']);
     Route::get('/patients/search', [PatientController::class, 'search']);
 
-    //malek
-
     /////////////////////////
     Route::get('/doctors/{id}/appointments', [DoctorController::class, 'getAppointments']);
     Route::post('/doctors/book-appointment', [DoctorController::class, 'bookAppointment']);
