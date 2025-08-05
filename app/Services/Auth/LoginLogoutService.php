@@ -75,7 +75,6 @@ class LoginLogoutService
            'refresh_token' => $refreshToken,
            'token_type' => 'Bearer',
            'role' => $validated['role'],
-           //'step' => $step
        ], [], 200);
     }
 

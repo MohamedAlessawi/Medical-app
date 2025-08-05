@@ -112,7 +112,7 @@ class PatientService
                     'age'        => $user->birthdate ? Carbon::parse($user->birthdate)->age : null,
                     'condition'  => $uc->condition ?? null,
                     'last_visit' => $uc->last_visit ?? null,
-                    'status'     => $uc->status ?? null,
+                    'status'     => $uc->status ?? "Follow-up",
                 ];
             });
 
