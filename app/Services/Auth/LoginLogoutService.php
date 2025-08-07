@@ -54,12 +54,12 @@ class LoginLogoutService
            return $this->unifiedResponse(false, 'User does not have the requested role.', [], [], 403);
        }
 
-       if ($validated['role'] === 'doctor') {
-           $doctorProfile = $user->doctorProfile;
-           if (!$doctorProfile || $doctorProfile->status !== 'approved') {
-               return $this->unifiedResponse(false, 'Your account is not approved yet. Please wait for verification.', [], [], 403);
-           }
-       }
+    //    if ($validated['role'] === 'doctor') {
+    //        $doctorProfile = $user->doctorProfile;
+    //        if (!$doctorProfile || $doctorProfile->status !== 'approved') {
+    //            return $this->unifiedResponse(false, 'Your account is not approved yet. Please wait for verification.', [], [], 403);
+    //        }
+    //    }
 
        if ($user->two_factor_enabled) {
            return $this->unifiedResponse(true, '2FA required.', ['user_id' => $user->id], [], 200);
