@@ -22,7 +22,7 @@ class DoctorAppointmentService
 
     public function getDoctorAppointments($request)
     {
-        $doctor = Auth::user()->doctor; // Assuming `doctor` relation exists
+        $doctor = Auth::user()->doctor;
 
         if (!$doctor) {
             return $this->unifiedResponse(false, 'You are not linked to a center as a doctor.', [], [], 403);
