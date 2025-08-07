@@ -9,7 +9,7 @@ class Appointment extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['doctor_id', 'appointment_date', 'status', 'booked_by', 'attendance_status', 'notes'];
+    protected $fillable = ['doctor_id', 'patient_id', 'appointment_date', 'status', 'booked_by', 'attendance_status', 'notes'];
 
     public function doctor()
     {
@@ -26,7 +26,7 @@ class Appointment extends Model
         return $this->hasOne(Rating::class, 'appointment_id');
     }
 
-    
+
     public function getDoctorNameAttribute()
     {
         return $this->doctor->user->full_name ?? null;

@@ -50,4 +50,9 @@ class PatientController extends Controller
     {
         return $this->medicalFileService->uploadMedicalFile($request, $id);
     }
+
+    public function destroy($id)
+    {
+        return $this->patientService->deletePatientFromCenter($id);
+    }
 }
