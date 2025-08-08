@@ -161,6 +161,7 @@ Route::middleware(['auth:sanctum', 'role:secretary'])->prefix('secretary')->grou
     Route::get('/patients/{id}', [PatientController::class, 'show']);
     Route::put('/patients/{id}', [PatientController::class, 'update']);
     Route::put('/patients/{id}/profile', [PatientController::class, 'updateProfile']);
+    Route::delete('/patients/{id}', [PatientController::class, 'destroy']);
 
     Route::get('/doctors', [DoctorController::class, 'index']);
     Route::get('/doctors/{id}', [DoctorController::class, 'show']);

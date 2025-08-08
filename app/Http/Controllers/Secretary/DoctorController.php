@@ -61,7 +61,7 @@ class DoctorController extends Controller
 
     public function bookAppointment(Request $request)
     {
-        $data = $request->only(['doctor_id', 'appointment_date', 'booked_by', 'status', 'attendance_status', 'notes']);
+        $data = $request->only(['doctor_id', 'appointment_date', 'patient_id', 'status', 'attendance_status', 'notes']);
         return $this->appointmentService->createAppointment($data);
     }
 

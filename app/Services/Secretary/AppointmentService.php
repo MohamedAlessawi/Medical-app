@@ -35,9 +35,11 @@ class AppointmentService
             return $this->unifiedResponse(false, 'Appointment already exists for this doctor at this time.', [], [], 409);
         }
         $appointment = Appointment::create([
+            // 'booked_by' => $data['booked_by'],
+            'booked_by' => auth()->id(),
             'doctor_id' => $data['doctor_id'],
             'appointment_date' => $data['appointment_date'],
-            'booked_by' => $data['booked_by'],
+            'patient_id' => $data['patient_id'],
             'status' => $data['status'] ?? 'pending',
             'attendance_status' => $data['attendance_status'] ?? null,
             'notes' => $data['notes'] ?? null,

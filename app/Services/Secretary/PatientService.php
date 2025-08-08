@@ -232,4 +232,33 @@ class PatientService
         return $this->unifiedResponse(true, 'Search results', $formatted);
     }
 
+    public function deletePatientFromCenter($id)
+    {
+        try {
+            DB::beginTransaction();
+
+            $centerId = Auth::user()->secretaries->first()->center_id;
+
+            $userCenter = UserCenter::where('user_id', $id)
+                ->where('center_id', $centerId)
+                ->first();
+
+            if (!$userCenter) {
+                return $this->unifiedResponse(false, 'Patient not found in this center.', [], [], 404);
+            }
+
+            UserCenter::where('user_id', $id)
+                ->where('center_id', $centerId)
+                ->delete();
+
+            DB::commit();
+
+            return $this->unifiedResponse(true, 'Patient removed from center successfully.', [], [], 200);
+
+        } catch (Exception $e) {
+            DB::rollBack();
+            return $this->unifiedResponse(false, 'Failed to remove patient.', [], ['error' => $e->getMessage()], 500);
+        }
+    }
+
 }

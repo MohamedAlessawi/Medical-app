@@ -30,6 +30,8 @@ class DoctorService
                 ->get()
                 ->map(function ($doctor) {
                     return [
+                        'id' => $doctor->id,
+                        'user_id' => $doctor->user_id,
                         'full_name' => 'Dr. ' . $doctor->user->full_name,
                         'email' => $doctor->user->email,
                         'address' => $doctor->user->address ?? null,
@@ -69,6 +71,8 @@ class DoctorService
                 ->findOrFail($id);
 
             $data = [
+                'id' => $doctor->id,
+                'user_id' => $doctor->user_id,
                 'full_name' => 'Dr. ' . $doctor->user->full_name,
                 'email' => $doctor->user->email,
                 'address' => $doctor->user->address ?? null,
@@ -161,6 +165,8 @@ class DoctorService
                 ->get()
                 ->map(function ($doctor) {
                     return [
+                        'id' => $doctor->id,
+                        'user_id' => $doctor->user_id,
                         'full_name' => 'Dr. ' . $doctor->user->full_name,
                         'email' => $doctor->user->email,
                         'address' => $doctor->user->address ?? null,
