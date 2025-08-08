@@ -22,13 +22,6 @@ class Doctor extends Model
     {
         return $this->belongsTo(Center::class);
     }
-
-
-    // public function specialty()
-    // {
-    //     return $this->belongsTo(Specialty::class);
-    // }
-
     public function workingHours()
     {
         return $this->hasMany(WorkingHour::class, 'doctor_id');

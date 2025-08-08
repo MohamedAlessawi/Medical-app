@@ -12,6 +12,8 @@ use \App\Http\Controllers\Api\Patient\PatientAppointmentController;
 
 
 use App\Http\Controllers\Api\Doctor\DoctorAppointmentController;
+use App\Http\Controllers\Api\Doctor\DoctorCenterController;
+use App\Http\Controllers\Api\Doctor\DoctorPatientProfileController;
 use App\Http\Controllers\SuperAdmin\SuperAdminController;
 use App\Http\Controllers\Secretary\PatientController;
 use App\Http\Controllers\Secretary\DoctorController;
@@ -93,10 +95,10 @@ Route::middleware(['auth:sanctum', 'role:doctor'])->group(function () {
     Route::post('doctor/profile', [DoctorProfileController::class, 'storeOrUpdate']);
     Route::get('doctor/appointments', [DoctorAppointmentController::class, 'index']);
     Route::get('doctor/appointments/{id}', [DoctorAppointmentController::class, 'show']);
-    // Route::put('doctor/appointments/{id}/attendance', [DoctorAppointmentController::class, 'confirmAttendance']);
     Route::get('doctor/past-appointments', [DoctorAppointmentController::class, 'pastAppointments']);
     Route::get('doctor/appointments/patient/{patientId}/visits', [DoctorAppointmentController::class, 'pastVisits']);
-
+    Route::get('doctor/centers', [DoctorCenterController::class, 'index']);
+    Route::get('doctor/patients/{patientId}/profile', [DoctorPatientProfileController::class, 'show']);
 });
 
 

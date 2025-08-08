@@ -36,6 +36,7 @@ class DoctorProfileService
         'birthdate' => 'nullable|date',
         'gender' => 'nullable|in:male,female',
         'address' => 'nullable|string|max:255',
+        'full_name' => 'nullable|string|max:255',
 
         'about_me' => 'nullable|string',
         'specialty_id' => 'nullable|exists:specialties,id',
@@ -50,17 +51,18 @@ class DoctorProfileService
     $profilePhotoPath = $this->handleFileUpload($request, 'profile_photo', 'profile_photos');
 
     $profile->update([
-    'about_me' => $validated['about_me'] ?? $profile->about_me,
-    'specialty_id' => $validated['specialty_id'] ?? $profile->specialty_id,
-    'years_of_experience' => $validated['years_of_experience'] ?? $profile->years_of_experience,
-    'appointment_duration' => $validated['appointment_duration'] ?? $profile->appointment_duration,
-    'certificate' => $certificatePath ?? $profile->certificate,
-    'status' => $certificatePath ? 'pending' : $profile->status,
-]);
-$statusNote = $certificatePath ? 'Status reverted to pending due to certificate update.' : null;
+        'about_me' => $validated['about_me'] ?? $profile->about_me,
+        'specialty_id' => $validated['specialty_id'] ?? $profile->specialty_id,
+        'years_of_experience' => $validated['years_of_experience'] ?? $profile->years_of_experience,
+        'appointment_duration' => $validated['appointment_duration'] ?? $profile->appointment_duration,
+        'certificate' => $certificatePath ?? $profile->certificate,
+        'status' => $certificatePath ? 'pending' : $profile->status,
+    ]);
 
+    $statusNote = $certificatePath ? 'Status reverted to pending due to certificate update.' : null;
 
     $user->update([
+        'full_name' => $validated['full_name'] ?? $user->full_name,
         'gender' => $validated['gender'] ?? $user->gender,
         'birthdate' => $validated['birthdate'] ?? $user->birthdate,
         'address' => $validated['address'] ?? $user->address,
@@ -68,25 +70,29 @@ $statusNote = $certificatePath ? 'Status reverted to pending due to certificate 
     ]);
 
     return $this->unifiedResponse(true, 'Doctor profile updated successfully', [
-    'doctor_profile' => $profile->only([
-        'about_me',
-        'years_of_experience',
-        'specialty_id',
-        'certificate',
-        'appointment_duration',
-        'status'
-    ]),
-    'user' => $user->only([
-        'full_name',
-        'gender',
-        'birthdate',
-        'profile_photo',
-        'address'
-    ]),
-    'note' => $statusNote
-]);
+        'doctor_profile' => $profile->only([
+            'about_me',
+            'years_of_experience',
+            'specialty_id',
+            'certificate',
+            'appointment_duration',
+            'status'
+        ]),
+        'user' => $user->only([
+            'id',
+            'full_name',
+            'email',
+            'phone',
+            'gender',
+            'birthdate',
+            'profile_photo',
+            'address'
+        ]),
+        'note' => $statusNote
+    ]);
 }
-    public function show()
+
+public function show()
 {
     $user = Auth::user();
 
@@ -106,7 +112,10 @@ $statusNote = $certificatePath ? 'Status reverted to pending due to certificate 
             'status' => $profile->status,
         ],
         'user' => [
+            'id' => $user->id,
             'full_name' => $user->full_name,
+            'email' => $user->email,
+            'phone' => $user->phone,
             'profile_photo' => $user->profile_photo,
             'birthdate' => $user->birthdate,
             'gender' => $user->gender,
@@ -114,6 +123,4 @@ $statusNote = $certificatePath ? 'Status reverted to pending due to certificate 
         ]
     ]);
 }
-
 }
-
