@@ -22,6 +22,17 @@ class Doctor extends Model
     {
         return $this->belongsTo(Center::class);
     }
+
+    public function doctorProfile()
+    {
+        return $this->hasOne(DoctorProfile::class, 'user_id', 'user_id');
+    }
+
+    public function specialty()
+    {
+        return $this->hasOneThrough(Specialty::class, DoctorProfile::class, 'user_id', 'id', 'user_id', 'specialty_id');
+    }
+
     public function workingHours()
     {
         return $this->hasMany(WorkingHour::class, 'doctor_id');

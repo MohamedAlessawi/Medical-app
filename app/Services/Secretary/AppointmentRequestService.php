@@ -80,20 +80,21 @@ class AppointmentRequestService
         }
 
 
-        $existingAppointment = Appointment::where('doctor_id', $appointmentRequest->doctor_id)
+        $existingAppointmentExists = Appointment::where('doctor_id', $appointmentRequest->doctor_id)
             ->whereDate('appointment_date', $appointmentRequest->requested_date->format('Y-m-d'))
-            ->whereTime('appointment_date', $appointmentRequest->requested_date->format('H:i'))
+            ->where('appointment_time', $appointmentRequest->requested_date->format('H:i:s'))
             ->where('status', '!=', 'cancelled')
-            ->first();
+            ->exists();
 
-        if ($existingAppointment) {
+        if ($existingAppointmentExists) {
             return $this->unifiedResponse(false, 'This time slot is no longer available.', [], [], 409);
         }
 
 
         $appointment = Appointment::create([
             'doctor_id' => $appointmentRequest->doctor_id,
-            'appointment_date' => $appointmentRequest->requested_date,
+            'appointment_date' => $appointmentRequest->requested_date->format('Y-m-d'),
+            'appointment_time' => $appointmentRequest->requested_date->format('H:i:s'),
             'booked_by' => auth()->id(),
             'status' => 'confirmed',
             'notes' => $appointmentRequest->notes,

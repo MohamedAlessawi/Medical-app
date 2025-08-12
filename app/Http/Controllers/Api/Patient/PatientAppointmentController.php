@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api\Patient;
 
 use App\Http\Controllers\Controller;
-use App\Services\Patient\PatientAppointmentService;
+use App\Services\patient\PatientAppointmentService;
 use App\Http\Requests\Patient\AppointmentRequestRequest;
 use Illuminate\Http\Request;
 
@@ -16,7 +16,7 @@ class PatientAppointmentController extends Controller
         $this->appointmentService = $appointmentService;
     }
 
-    
+
     public function getCenters(Request $request)
     {
         return $this->appointmentService->getCenters($request);

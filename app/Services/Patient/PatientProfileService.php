@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Patient;
+namespace App\Services\patient;
 
 use App\Repositories\Patient\PatientProfileRepository;
 

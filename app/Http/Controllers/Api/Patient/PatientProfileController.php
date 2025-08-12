@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api\Patient;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Services\Patient\PatientProfileService;
+use App\Services\patient\PatientProfileService;
 
 class PatientProfileController extends Controller
 {

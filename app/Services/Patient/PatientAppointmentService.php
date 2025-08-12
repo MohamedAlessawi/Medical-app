@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Patient;
+namespace App\Services\patient;
 
 use App\Models\{Center, Specialty, Doctor, DoctorProfile, WorkingHour, Appointment, AppointmentRequest};
 use App\Traits\ApiResponseTrait;

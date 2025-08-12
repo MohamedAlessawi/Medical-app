@@ -28,6 +28,7 @@ use App\Http\Controllers\SuperAdmin\ReportController;
 use App\Http\Controllers\Secretary\SecretaryProfileController;
 use App\Http\Controllers\Secretary\AppointmentRequestController;
 use App\Http\Controllers\Api\Doctor\DoctorProfileController;
+use App\Http\Controllers\SearchController;
 
 
 /*
@@ -69,12 +70,13 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 //patient
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/patient/profile', [PatientProfileController::class, 'show']);
     Route::put('/patient/profile', [PatientProfileController::class, 'update']);
 
-
     Route::get('/patient/centers', [PatientAppointmentController::class, 'getCenters']);
+
     Route::get('/patient/specialties', [PatientAppointmentController::class, 'getSpecialties']);
     Route::get('/patient/centers/{centerId}/specialties/{specialtyId}/doctors', [PatientAppointmentController::class, 'getDoctorsByCenterAndSpecialty']);
     Route::get('/patient/doctors/{doctorId}/centers', [PatientAppointmentController::class, 'getDoctorCenters']);
@@ -92,7 +94,6 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::middleware(['auth:sanctum', 'role:doctor'])->group(function () {
     Route::post('doctor/profile', [DoctorProfileController::class, 'storeOrUpdate']);
     Route::get('doctor/profile', [DoctorProfileController::class, 'show']);
-    Route::post('doctor/profile', [DoctorProfileController::class, 'storeOrUpdate']);
     Route::get('doctor/appointments', [DoctorAppointmentController::class, 'index']);
     Route::get('doctor/appointments/{id}', [DoctorAppointmentController::class, 'show']);
     Route::get('doctor/past-appointments', [DoctorAppointmentController::class, 'pastAppointments']);
@@ -197,3 +198,10 @@ Route::middleware(['auth:sanctum', 'role:secretary'])->prefix('secretary')->grou
     Route::post('/appointment-requests/{id}/reject', [AppointmentRequestController::class, 'reject']);
     Route::get('/appointment-requests-stats', [AppointmentRequestController::class, 'stats']);
 });
+
+// Search routes - متاحة للجميع
+Route::get('/search', [SearchController::class, 'search']);
+Route::get('/search/advanced', [SearchController::class, 'advancedSearch']);
+Route::get('/search/specialties', [SearchController::class, 'searchSpecialties']);
+Route::get('/search/doctors', [SearchController::class, 'searchDoctors']);
+Route::get('/search/centers', [SearchController::class, 'searchCenters']);
