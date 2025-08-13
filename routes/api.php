@@ -74,6 +74,10 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/patient/profile', [PatientProfileController::class, 'show']);
     Route::put('/patient/profile', [PatientProfileController::class, 'update']);
+    Route::put('/patient/profile/medical', [PatientProfileController::class, 'updateMedical']);
+    Route::put('/patient/profile/emergency', [PatientProfileController::class, 'updateEmergency']);
+    Route::put('/patient/profile/lifestyle', [PatientProfileController::class, 'updateLifestyle']);
+    Route::put('/patient/profile/insurance', [PatientProfileController::class, 'updateInsurance']);
 
     Route::get('/patient/centers', [PatientAppointmentController::class, 'getCenters']);
 

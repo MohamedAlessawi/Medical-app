@@ -29,12 +29,12 @@ class SearchService
 
         $doctors = Doctor::with(['user', 'doctorProfile', 'specialty'])
             ->whereHas('user', function ($q) use ($searchTerm) {
-                $q->where('name', 'LIKE', $searchTerm)
+                $q->where('full_name', 'LIKE', $searchTerm)
                   ->orWhere('email', 'LIKE', $searchTerm);
             })
             ->orWhereHas('doctorProfile', function ($q) use ($searchTerm) {
-                $q->where('bio', 'LIKE', $searchTerm)
-                  ->orWhere('experience_years', 'LIKE', $searchTerm);
+                $q->where('about_me', 'LIKE', $searchTerm)
+                  ->orWhere('years_of_experience', 'LIKE', $searchTerm);
             })
             ->orWhereHas('specialty', function ($q) use ($searchTerm) {
                 $q->where('name', 'LIKE', $searchTerm)
@@ -60,7 +60,7 @@ class SearchService
             'doctors' => $doctors->map(function ($doctor) {
                 return [
                     'id' => $doctor->id,
-                    'name' => $doctor->user->name,
+                    'name' => $doctor->user->full_name,
                     'email' => $doctor->user->email,
                     'specialty' => $doctor->specialty ? $doctor->specialty->name : null,
                     'bio' => $doctor->doctorProfile ? $doctor->doctorProfile->about_me : null,
@@ -121,7 +121,7 @@ class SearchService
         if ($type === 'all' || $type === 'doctors') {
             $doctors = Doctor::with(['user', 'doctorProfile', 'specialty'])
                 ->whereHas('user', function ($q) use ($searchTerm) {
-                    $q->where('name', 'LIKE', $searchTerm)
+                    $q->where('full_name', 'LIKE', $searchTerm)
                       ->orWhere('email', 'LIKE', $searchTerm);
                 })
                 ->orWhereHas('doctorProfile', function ($q) use ($searchTerm) {
@@ -137,7 +137,7 @@ class SearchService
             $results['doctors'] = $doctors->map(function ($doctor) {
                 return [
                     'id' => $doctor->id,
-                    'name' => $doctor->user->name,
+                    'name' => $doctor->user->full_name,
                     'email' => $doctor->user->email,
                     'specialty' => $doctor->specialty ? $doctor->specialty->name : null,
                     'bio' => $doctor->doctorProfile ? $doctor->doctorProfile->about_me : null,
@@ -164,7 +164,7 @@ class SearchService
             });
         }
 
-        
+
         $stats = [
             'total_results' => array_sum(array_map('count', $results)),
             'specialties_count' => isset($results['specialties']) ? $results['specialties']->count() : 0,

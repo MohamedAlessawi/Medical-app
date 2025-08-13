@@ -17,6 +17,7 @@ class AppointmentRequestService
         $centerId = auth()->user()->secretaries->first()->center_id;
 
         $query = AppointmentRequest::where('center_id', $centerId)
+            ->where('status', '!=', 'deleted')
             ->with(['patient', 'doctor.user.doctorProfile.specialty', 'center']);
 
         if ($request->has('status')) {
@@ -101,7 +102,7 @@ class AppointmentRequestService
         ]);
 
 
-        $appointmentRequest->update(['status' => 'approved']);
+        $appointmentRequest->update(['status' => 'deleted']);
 
         return $this->unifiedResponse(true, 'Appointment request approved successfully.', [
             'appointment_id' => $appointment->id,
@@ -125,7 +126,7 @@ class AppointmentRequestService
 
 
         $appointmentRequest->update([
-            'status' => 'rejected',
+            'status' => 'deleted',
             'notes' => $appointmentRequest->notes . "\nRejection reason: " . ($reason ?? 'No reason provided'),
         ]);
 
@@ -138,11 +139,12 @@ class AppointmentRequestService
         $centerId = auth()->user()->secretaries->first()->center_id;
 
         $stats = [
-            'total_requests' => AppointmentRequest::where('center_id', $centerId)->count(),
+            'total_requests' => AppointmentRequest::where('center_id', $centerId)->where('status', '!=', 'deleted')->count(),
             'pending_requests' => AppointmentRequest::where('center_id', $centerId)->where('status', 'pending')->count(),
             'approved_requests' => AppointmentRequest::where('center_id', $centerId)->where('status', 'approved')->count(),
             'rejected_requests' => AppointmentRequest::where('center_id', $centerId)->where('status', 'rejected')->count(),
             'today_requests' => AppointmentRequest::where('center_id', $centerId)
+                ->where('status', '!=', 'deleted')
                 ->whereDate('created_at', Carbon::today())->count(),
         ];
 

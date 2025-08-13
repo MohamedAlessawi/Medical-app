@@ -11,6 +11,17 @@ class Appointment extends Model
 
     protected $fillable = ['doctor_id', 'patient_id', 'appointment_date', 'appointment_time', 'status', 'booked_by', 'attendance_status', 'notes'];
 
+    
+    public function scopeActive($query)
+    {
+        return $query->where('status', '!=', 'deleted');
+    }
+
+    public function scopeNotDeleted($query)
+    {
+        return $query->where('status', '!=', 'deleted');
+    }
+
     public function doctor()
     {
         return $this->belongsTo(Doctor::class);

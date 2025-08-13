@@ -17,6 +17,7 @@ class AppointmentService
         $today = Carbon::today();
         $appointments = Appointment::where('doctor_id', $doctorId)
             ->whereDate('appointment_date', '>=', $today)
+            ->where('status', '!=', 'deleted')
             ->orderBy('appointment_date')
             ->with(['user:id,full_name,email,phone'])
             ->get();
@@ -86,7 +87,10 @@ class AppointmentService
         if (!$appointment) {
             return $this->unifiedResponse(false, 'Appointment not found.', [], [], 404);
         }
-        $appointment->delete();
+
+        
+        $appointment->update(['status' => 'deleted']);
+
         return $this->unifiedResponse(true, 'Appointment deleted successfully.');
     }
 
