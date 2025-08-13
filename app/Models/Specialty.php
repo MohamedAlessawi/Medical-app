@@ -17,7 +17,7 @@ class Specialty extends Model
     }
 
 
-    
+
     public function getDoctorsCountAttribute()
     {
         return $this->doctors()->count();

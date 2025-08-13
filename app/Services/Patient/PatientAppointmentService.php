@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Patient;
+namespace App\Services\patient;
 
 use App\Models\{Center, Specialty, Doctor, DoctorProfile, WorkingHour, Appointment, AppointmentRequest};
 use App\Traits\ApiResponseTrait;
@@ -11,7 +11,6 @@ use Illuminate\Http\Request;
 class PatientAppointmentService
 {
     use ApiResponseTrait;
-
 
     public function getCenters(Request $request)
     {
@@ -35,7 +34,6 @@ class PatientAppointmentService
         return $this->unifiedResponse(true, 'Centers fetched successfully.', $centers);
     }
 
-
     public function getSpecialties(Request $request)
     {
         $query = Specialty::query();
@@ -48,7 +46,6 @@ class PatientAppointmentService
 
         return $this->unifiedResponse(true, 'Specialties fetched successfully.', $specialties);
     }
-
 
     public function getDoctorsByCenterAndSpecialty($centerId, $specialtyId)
     {
@@ -73,7 +70,6 @@ class PatientAppointmentService
         return $this->unifiedResponse(true, 'Doctors fetched successfully.', $doctors);
     }
 
-
     public function getDoctorCenters($doctorId)
     {
         $doctor = Doctor::find($doctorId);
@@ -97,13 +93,18 @@ class PatientAppointmentService
         return $this->unifiedResponse(true, 'Doctor centers fetched successfully.', $centers);
     }
 
-
     public function getAvailableSlots($doctorId, $centerId, Request $request)
     {
-        $date = $request->get('date', Carbon::today()->format('Y-m-d'));
+        
+        $date = $request->get('date', Carbon::tomorrow()->format('Y-m-d'));
         $selectedDate = Carbon::parse($date);
-        $dayOfWeek = $selectedDate->format('l');
 
+
+        if ($selectedDate->isPast()) {
+            return $this->unifiedResponse(false, 'Cannot book appointments in the past. Please select a future date.', [], [], 422);
+        }
+
+        $dayOfWeek = $selectedDate->format('l');
 
         $doctor = Doctor::where('id', $doctorId)
             ->where('center_id', $centerId)
@@ -113,7 +114,6 @@ class PatientAppointmentService
             return $this->unifiedResponse(false, 'Doctor not found in this center.', [], [], 404);
         }
 
-
         $workingHour = WorkingHour::where('doctor_id', $doctorId)
             ->where('day_of_week', $dayOfWeek)
             ->first();
@@ -121,7 +121,6 @@ class PatientAppointmentService
         if (!$workingHour) {
             return $this->unifiedResponse(false, 'Doctor does not work on this day.', [], [], 404);
         }
-
 
         $availableSlots = $this->calculateAvailableSlots($doctorId, $centerId, $selectedDate, $workingHour);
 
@@ -136,10 +135,8 @@ class PatientAppointmentService
         ]);
     }
 
-
     private function calculateAvailableSlots($doctorId, $centerId, $date, $workingHour)
     {
-
         $doctor = Doctor::find($doctorId);
         $appointmentDuration = $doctor->appointment_duration;
 
@@ -151,7 +148,6 @@ class PatientAppointmentService
 
         while ($currentTime->copy()->addMinutes($appointmentDuration) <= $endTime) {
             $slotTime = $currentTime->format('H:i');
-
 
             $existingAppointment = Appointment::where('doctor_id', $doctorId)
                 ->whereDate('appointment_date', $date)
@@ -169,12 +165,10 @@ class PatientAppointmentService
         return $slots;
     }
 
-
     public function requestAppointment(AppointmentRequestRequest $request)
     {
         $validated = $request->validated();
         $patientId = $request->user()->id;
-
 
         $doctor = Doctor::where('id', $validated['doctor_id'])
             ->where('center_id', $validated['center_id'])
@@ -183,7 +177,6 @@ class PatientAppointmentService
         if (!$doctor) {
             return $this->unifiedResponse(false, 'Doctor not found in this center.', [], [], 404);
         }
-
 
         $appointmentDateTime = Carbon::parse($validated['requested_date'] . ' ' . $validated['requested_time']);
 
@@ -197,7 +190,6 @@ class PatientAppointmentService
             return $this->unifiedResponse(false, 'This time slot is already booked.', [], [], 409);
         }
 
-
         $appointmentRequest = AppointmentRequest::create([
             'patient_id' => $patientId,
             'doctor_id' => $validated['doctor_id'],
@@ -209,7 +201,6 @@ class PatientAppointmentService
 
         return $this->unifiedResponse(true, 'Appointment request submitted successfully.', $appointmentRequest);
     }
-
 
     public function getAppointmentRequests(Request $request)
     {

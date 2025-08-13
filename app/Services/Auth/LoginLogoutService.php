@@ -70,13 +70,44 @@ class LoginLogoutService
        $user->refresh_token = $refreshToken;
        $user->refresh_token_expires_at = Carbon::now()->addMinutes(14400);
        $user->save();
-       return $this->unifiedResponse(true, 'Login successful.', [
-           'access_token' => $token,
-           'refresh_token' => $refreshToken,
-           'token_type' => 'Bearer',
-           'role' => $validated['role'],
-       ], [], 200);
+
+      // if (!$user->email_verified_at) {
+        //     Log::error('Email not verified for user: ' . $user->id);
+        //     return $this->unifiedResponse(false, 'Email not verified.', [], [], 403);
+        // }
+
+    $hasRole = $user->roles()->where('name', $validated['role'])->exists();
+    if (!$hasRole) {
+        return $this->unifiedResponse(false, 'User does not have the requested role.', [], [], 403);
     }
+    if ($validated['role'] === 'doctor') {
+    $doctorProfile = $user->doctorProfile;
+
+    if (!$doctorProfile || $doctorProfile->status !== 'approved') {
+        return $this->unifiedResponse(false, 'Doctor account is not approved yet or rejected .', [], [], 403);
+    }
+    }
+
+    if ($user->two_factor_enabled) {
+        return $this->unifiedResponse(true, '2FA required.', ['user_id' => $user->id], [], 200);
+    }
+
+    $token = $user->createToken('auth_token')->plainTextToken;
+    $refreshToken = Str::random(60);
+    $user->refresh_token = $refreshToken;
+    $user->refresh_token_expires_at = Carbon::now()->addMinutes(14400);
+    $user->save();
+
+
+    return $this->unifiedResponse(true, 'Login successful.', [
+        'access_token' => $token,
+        'refresh_token' => $refreshToken,
+        'token_type' => 'Bearer',
+        'role' => $validated['role'],
+
+    ], [], 200);
+}
+
 
     public function logout($request)
     {

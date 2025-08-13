@@ -9,7 +9,18 @@ class Appointment extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['doctor_id', 'patient_id', 'appointment_date', 'status', 'booked_by', 'attendance_status', 'notes'];
+    protected $fillable = ['doctor_id', 'patient_id', 'appointment_date', 'appointment_time', 'status', 'booked_by', 'attendance_status', 'notes'];
+
+    
+    public function scopeActive($query)
+    {
+        return $query->where('status', '!=', 'deleted');
+    }
+
+    public function scopeNotDeleted($query)
+    {
+        return $query->where('status', '!=', 'deleted');
+    }
 
     public function doctor()
     {
@@ -19,6 +30,11 @@ class Appointment extends Model
     public function user()
     {
         return $this->belongsTo(User::class, 'booked_by');
+    }
+
+    public function patient()
+    {
+        return $this->belongsTo(User::class, 'patient_id');
     }
 
     public function rating()
@@ -53,7 +69,7 @@ class Appointment extends Model
 
     public function getAppointmentTimeFormattedAttribute()
     {
-        return $this->appointment_date ? $this->appointment_date->format('H:i') : null;
+        return $this->appointment_time ? $this->appointment_time : null;
     }
 
 

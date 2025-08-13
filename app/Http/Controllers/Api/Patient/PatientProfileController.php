@@ -4,7 +4,8 @@ namespace App\Http\Controllers\Api\Patient;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Services\Patient\PatientProfileService;
+use App\Services\patient\PatientProfileService;
+use App\Http\Requests\Patient\UpdatePatientProfileRequest;
 
 class PatientProfileController extends Controller
 {
@@ -18,30 +19,36 @@ class PatientProfileController extends Controller
     public function show(Request $request)
     {
         $userId = $request->user()->id;
-        $profile = $this->service->getFullProfile($userId);
-
-        return response()->json([
-            'success' => true,
-            'data' => $profile
-        ]);
+        return $this->service->getFullProfile($userId);
     }
 
-    public function update(Request $request)
+    public function update(UpdatePatientProfileRequest $request)
     {
-        $validated = $request->validate([
-            'phone' => 'nullable|string|max:20',
-            'address' => 'nullable|string|max:255',
-            'gender' => 'nullable|in:male,female',
-            'birthdate' => 'nullable|date',
-        ]);
-
         $userId = $request->user()->id;
-        $profile = $this->service->updateProfile($userId, $validated);
+        return $this->service->updateProfile($userId, $request->validated());
+    }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Profile updated successfully',
-            'data' => $profile
-        ]);
+    public function updateMedical(UpdatePatientProfileRequest $request)
+    {
+        $userId = $request->user()->id;
+        return $this->service->updateMedicalInfo($userId, $request->validated());
+    }
+
+    public function updateEmergency(UpdatePatientProfileRequest $request)
+    {
+        $userId = $request->user()->id;
+        return $this->service->updateEmergencyContacts($userId, $request->validated());
+    }
+
+    public function updateLifestyle(UpdatePatientProfileRequest $request)
+    {
+        $userId = $request->user()->id;
+        return $this->service->updateLifestyleInfo($userId, $request->validated());
+    }
+
+    public function updateInsurance(UpdatePatientProfileRequest $request)
+    {
+        $userId = $request->user()->id;
+        return $this->service->updateInsuranceInfo($userId, $request->validated());
     }
 }

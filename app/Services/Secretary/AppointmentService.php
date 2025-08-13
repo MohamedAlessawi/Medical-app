@@ -17,6 +17,7 @@ class AppointmentService
         $today = Carbon::today();
         $appointments = Appointment::where('doctor_id', $doctorId)
             ->whereDate('appointment_date', '>=', $today)
+            ->where('status', '!=', 'deleted')
             ->orderBy('appointment_date')
             ->with(['user:id,full_name,email,phone'])
             ->get();
@@ -27,8 +28,12 @@ class AppointmentService
     public function createAppointment($data)
     {
 
+
         $exists = Appointment::where('doctor_id', $data['doctor_id'])
-            ->where('appointment_date', $data['appointment_date'])
+            ->whereDate('appointment_date', $data['appointment_date'])
+            ->when(isset($data['appointment_time']), function ($q) use ($data) {
+                $q->where('appointment_time', $data['appointment_time']);
+            })
             ->where('status', '!=', 'cancelled')
             ->exists();
         if ($exists) {
@@ -39,6 +44,7 @@ class AppointmentService
             'booked_by' => auth()->id(),
             'doctor_id' => $data['doctor_id'],
             'appointment_date' => $data['appointment_date'],
+            'appointment_time' => $data['appointment_time'] ?? null,
             'patient_id' => $data['patient_id'],
             'status' => $data['status'] ?? 'pending',
             'attendance_status' => $data['attendance_status'] ?? null,
@@ -54,9 +60,16 @@ class AppointmentService
             return $this->unifiedResponse(false, 'Appointment not found.', [], [], 404);
         }
 
-        if ((isset($data['doctor_id']) && $data['doctor_id'] != $appointment->doctor_id) || (isset($data['appointment_date']) && $data['appointment_date'] != $appointment->appointment_date)) {
+        if (
+            (isset($data['doctor_id']) && $data['doctor_id'] != $appointment->doctor_id) ||
+            (isset($data['appointment_date']) && $data['appointment_date'] != $appointment->appointment_date) ||
+            (isset($data['appointment_time']) && $data['appointment_time'] != $appointment->appointment_time)
+        ) {
             $exists = Appointment::where('doctor_id', $data['doctor_id'] ?? $appointment->doctor_id)
-                ->where('appointment_date', $data['appointment_date'] ?? $appointment->appointment_date)
+                ->whereDate('appointment_date', $data['appointment_date'] ?? $appointment->appointment_date)
+                ->when(isset($data['appointment_time']) || $appointment->appointment_time, function ($q) use ($data, $appointment) {
+                    $q->where('appointment_time', $data['appointment_time'] ?? $appointment->appointment_time);
+                })
                 ->where('id', '!=', $id)
                 ->where('status', '!=', 'cancelled')
                 ->exists();
@@ -74,7 +87,10 @@ class AppointmentService
         if (!$appointment) {
             return $this->unifiedResponse(false, 'Appointment not found.', [], [], 404);
         }
-        $appointment->delete();
+
+        
+        $appointment->update(['status' => 'deleted']);
+
         return $this->unifiedResponse(true, 'Appointment deleted successfully.');
     }
 
@@ -131,19 +147,23 @@ class AppointmentService
             })
             ->whereDate('appointment_date', now()->toDateString())
             ->with([
+                'patient:id,full_name',
                 'user:id,full_name',
                 'doctor.user:id,full_name',
-                'doctor.doctorProfile:id,user_id,specialization,visit_type'
+                'doctor.doctorProfile.specialty:id,name'
             ])
             ->orderBy('appointment_date')
+            ->orderBy('appointment_time')
             ->get()
             ->map(function($appointment) {
                 return [
+                    'id' => $appointment->id,
                     'status' => $appointment->status,
-                    'time' => date('H:i', strtotime($appointment->appointment_date)),
-                    'patient_name' => $appointment->user->full_name ?? null,
+                    'time' => $appointment->appointment_time ?? date('H:i', strtotime($appointment->appointment_date)),
+                    'patient_name' => $appointment->patient->full_name ?? null,
                     'doctor_name' => $appointment->doctor->user->full_name ?? null,
-                    'visit_type' => $appointment->doctor->doctorProfile->visit_type ?? ($appointment->notes ?? null),
+                    'specialty' => $appointment->doctor->doctorProfile->specialty->name ?? null,
+                    'notes' => $appointment->notes,
                 ];
             });
         return $this->unifiedResponse(true, 'Today\'s appointments fetched successfully', $appointments);

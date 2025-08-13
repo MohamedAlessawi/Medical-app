@@ -12,6 +12,8 @@ use \App\Http\Controllers\Api\Patient\PatientAppointmentController;
 
 
 use App\Http\Controllers\Api\Doctor\DoctorAppointmentController;
+use App\Http\Controllers\Api\Doctor\DoctorCenterController;
+use App\Http\Controllers\Api\Doctor\DoctorPatientProfileController;
 use App\Http\Controllers\SuperAdmin\SuperAdminController;
 use App\Http\Controllers\Secretary\PatientController;
 use App\Http\Controllers\Secretary\DoctorController;
@@ -26,6 +28,7 @@ use App\Http\Controllers\SuperAdmin\ReportController;
 use App\Http\Controllers\Secretary\SecretaryProfileController;
 use App\Http\Controllers\Secretary\AppointmentRequestController;
 use App\Http\Controllers\Api\Doctor\DoctorProfileController;
+use App\Http\Controllers\SearchController;
 
 use App\Http\Controllers\Admin\DoctorManagementController;
 use App\Http\Controllers\Admin\SecretaryManagementController;
@@ -75,12 +78,17 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 //patient
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/patient/profile', [PatientProfileController::class, 'show']);
     Route::put('/patient/profile', [PatientProfileController::class, 'update']);
-
+    Route::put('/patient/profile/medical', [PatientProfileController::class, 'updateMedical']);
+    Route::put('/patient/profile/emergency', [PatientProfileController::class, 'updateEmergency']);
+    Route::put('/patient/profile/lifestyle', [PatientProfileController::class, 'updateLifestyle']);
+    Route::put('/patient/profile/insurance', [PatientProfileController::class, 'updateInsurance']);
 
     Route::get('/patient/centers', [PatientAppointmentController::class, 'getCenters']);
+
     Route::get('/patient/specialties', [PatientAppointmentController::class, 'getSpecialties']);
     Route::get('/patient/centers/{centerId}/specialties/{specialtyId}/doctors', [PatientAppointmentController::class, 'getDoctorsByCenterAndSpecialty']);
     Route::get('/patient/doctors/{doctorId}/centers', [PatientAppointmentController::class, 'getDoctorCenters']);
@@ -98,13 +106,12 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::middleware(['auth:sanctum', 'role:doctor'])->group(function () {
     Route::post('doctor/profile', [DoctorProfileController::class, 'storeOrUpdate']);
     Route::get('doctor/profile', [DoctorProfileController::class, 'show']);
-    Route::post('doctor/profile', [DoctorProfileController::class, 'storeOrUpdate']);
     Route::get('doctor/appointments', [DoctorAppointmentController::class, 'index']);
     Route::get('doctor/appointments/{id}', [DoctorAppointmentController::class, 'show']);
-    // Route::put('doctor/appointments/{id}/attendance', [DoctorAppointmentController::class, 'confirmAttendance']);
     Route::get('doctor/past-appointments', [DoctorAppointmentController::class, 'pastAppointments']);
     Route::get('doctor/appointments/patient/{patientId}/visits', [DoctorAppointmentController::class, 'pastVisits']);
-
+    Route::get('doctor/centers', [DoctorCenterController::class, 'index']);
+    Route::get('doctor/patients/{patientId}/profile', [DoctorPatientProfileController::class, 'show']);
 });
 
 
@@ -240,3 +247,9 @@ Route::middleware(['auth:sanctum','role:super_admin'])->prefix('super-admin')->g
     Route::put('/services/{id}', [ServiceCatalogController::class, 'update']);
 });
 
+// Search routes - متاحة للجميع
+Route::get('/search', [SearchController::class, 'search']);
+Route::get('/search/advanced', [SearchController::class, 'advancedSearch']);
+Route::get('/search/specialties', [SearchController::class, 'searchSpecialties']);
+Route::get('/search/doctors', [SearchController::class, 'searchDoctors']);
+Route::get('/search/centers', [SearchController::class, 'searchCenters']);

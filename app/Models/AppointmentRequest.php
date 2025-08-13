@@ -23,6 +23,17 @@ class AppointmentRequest extends Model
         'requested_date' => 'datetime',
     ];
 
+    
+    public function scopeActive($query)
+    {
+        return $query->where('status', '!=', 'deleted');
+    }
+
+    public function scopeNotDeleted($query)
+    {
+        return $query->where('status', '!=', 'deleted');
+    }
+
     public function patient()
     {
         return $this->belongsTo(User::class, 'patient_id');
