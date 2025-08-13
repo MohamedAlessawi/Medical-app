@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api\Patient;
 
 use App\Http\Controllers\Controller;
-use App\Services\patient\PatientAppointmentService;
+use App\Services\Patient\PatientAppointmentService;
 use App\Http\Requests\Patient\AppointmentRequestRequest;
 use Illuminate\Http\Request;
 
