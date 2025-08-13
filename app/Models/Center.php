@@ -12,7 +12,9 @@ class Center extends Model
         'name',
         'location',
         'rating',
-        'is_active'
+        'is_active',
+        'phone',
+        'image'
     ];
 
     protected $casts = [
@@ -65,6 +67,11 @@ class Center extends Model
             ->pluck('user.doctorProfile.specialty_id')
             ->unique()
             ->count();
+    }
+
+    public function workingHours()
+    {
+        return $this->hasMany(\App\Models\CenterWorkingHour::class);
     }
 
 }

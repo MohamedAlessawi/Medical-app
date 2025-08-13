@@ -27,6 +27,14 @@ use App\Http\Controllers\Secretary\SecretaryProfileController;
 use App\Http\Controllers\Secretary\AppointmentRequestController;
 use App\Http\Controllers\Api\Doctor\DoctorProfileController;
 
+use App\Http\Controllers\Admin\DoctorManagementController;
+use App\Http\Controllers\Admin\SecretaryManagementController;
+use App\Http\Controllers\Admin\ServiceManagementController;
+use App\Http\Controllers\Doctor\InvitationController;
+
+use App\Http\Controllers\Admin\CenterController as AdminCenterController;
+
+use App\Http\Controllers\SuperAdmin\ServiceCatalogController;
 
 /*
 |--------------------------------------------------------------------------
@@ -195,3 +203,40 @@ Route::middleware(['auth:sanctum', 'role:secretary'])->prefix('secretary')->grou
     Route::post('/appointment-requests/{id}/reject', [AppointmentRequestController::class, 'reject']);
     Route::get('/appointment-requests-stats', [AppointmentRequestController::class, 'stats']);
 });
+
+
+Route::middleware(['auth:sanctum','role:admin'])->prefix('admin')->group(function () {
+    Route::get('/center', [AdminCenterController::class, 'show']);
+    Route::put('/center', [AdminCenterController::class, 'update']);
+    Route::post('/center/image', [AdminCenterController::class, 'uploadImage']);
+
+    Route::get('/center/working-hours', [AdminCenterController::class, 'workingHoursIndex']);
+    Route::put('/center/working-hours', [AdminCenterController::class, 'workingHoursBulkUpdate']);
+
+    Route::get('/secretaries', [SecretaryManagementController::class, 'index']);
+    Route::put('/secretaries/{userId}/status', [SecretaryManagementController::class, 'toggle']);
+    Route::delete('/secretaries/{userId}', [SecretaryManagementController::class, 'remove']);
+
+    Route::get('/doctors', [DoctorManagementController::class, 'index']);
+    Route::post('/doctor-invitations', [DoctorManagementController::class, 'invite']);
+    Route::put('/doctors/{doctorId}/status', [DoctorManagementController::class, 'toggle']);
+    Route::delete('/doctors/{doctorId}', [DoctorManagementController::class, 'remove']);
+
+    Route::get('/services/catalog', [ServiceManagementController::class, 'catalog']);
+    Route::get('/centers/services', [ServiceManagementController::class, 'index']);
+    Route::post('/centers/services', [ServiceManagementController::class, 'store']);
+    Route::delete('/centers/services/{id}', [ServiceManagementController::class, 'destroy']);
+});
+
+Route::middleware(['auth:sanctum','role:doctor'])->prefix('doctor')->group(function () {
+    Route::get('/invitations', [InvitationController::class, 'index']);
+    Route::put('/invitations/{id}/accept', [InvitationController::class, 'accept']);
+    Route::put('/invitations/{id}/reject', [InvitationController::class, 'reject']);
+});
+
+Route::middleware(['auth:sanctum','role:super_admin'])->prefix('super-admin')->group(function () {
+    Route::get('/services', [ServiceCatalogController::class, 'index']);
+    Route::post('/services', [ServiceCatalogController::class, 'store']);
+    Route::put('/services/{id}', [ServiceCatalogController::class, 'update']);
+});
+
