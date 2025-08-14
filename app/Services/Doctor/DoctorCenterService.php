@@ -14,7 +14,6 @@ class DoctorCenterService
     {
         $user = Auth::user();
 
-        // جلب كل علاقات الطبيب مع المراكز
         $doctorCenters = Doctor::with('center')
             ->where('user_id', $user->id)
             ->get()

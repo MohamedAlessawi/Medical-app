@@ -96,7 +96,7 @@ class AppointmentRequestService
             'doctor_id' => $appointmentRequest->doctor_id,
             'appointment_date' => $appointmentRequest->requested_date->format('Y-m-d'),
             'appointment_time' => $appointmentRequest->requested_date->format('H:i:s'),
-            'booked_by' => auth()->id(),
+            'booked_by' => $appointmentRequest->patient_id,
             'status' => 'confirmed',
             'notes' => $appointmentRequest->notes,
         ]);

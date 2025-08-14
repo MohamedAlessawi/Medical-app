@@ -21,37 +21,53 @@ class DoctorAppointmentService
     }
 
     public function getDoctorAppointments($request)
-    {
-        $doctor = Auth::user()->doctor;
+{
+    $doctor = Auth::user()->doctor;
 
-        if (!$doctor) {
-            return $this->unifiedResponse(false, 'You are not linked to a center as a doctor.', [], [], 403);
-        }
-
-        $filter = $request->query('filter');
-        $perPage = $request->query('per_page', 10);
-
-        $appointments = $this->appointmentRepo
-            ->getConfirmedAppointmentsByDoctor($doctor->id, $filter, $perPage);
-
-        return $this->unifiedResponse(true, 'Appointments fetched successfully.', $appointments);
+    if (!$doctor) {
+        return $this->unifiedResponse(false, 'You are not linked to a center as a doctor.', [], [], 403);
     }
+
+    $filter = $request->query('filter');
+    $perPage = $request->query('per_page', 10);
+
+    $appointments = Appointment::with([
+            'user:id,full_name,email,phone,profile_photo'
+        ])
+        ->where('doctor_id', $doctor->id)
+        ->where('status', 'confirmed')
+        ->when($filter, function ($query) use ($filter) {
+            if ($filter === 'upcoming') {
+                $query->where('appointment_date', '>=', now());
+            } elseif ($filter === 'past') {
+                $query->where('appointment_date', '<', now());
+            }
+        })
+        ->orderBy('appointment_date')
+        ->paginate($perPage);
+
+    return $this->unifiedResponse(true, 'Appointments fetched successfully.', $appointments);
+}
+
     public function showAppointment($id)
-    {
-        $doctor = Auth::user()->doctor;
+{
+    $doctor = Auth::user()->doctor;
 
-        $appointment = Appointment::with('user:id,full_name,email,phone')
-            ->where('id', $id)
-            ->where('doctor_id', $doctor->id)
-            ->where('status', 'confirmed')
-            ->first();
+    $appointment = Appointment::with([
+            'user:id,full_name,email,phone,profile_photo'
+        ])
+        ->where('id', $id)
+        ->where('doctor_id', $doctor->id)
+        ->where('status', 'confirmed')
+        ->first();
 
-        if (!$appointment) {
-            return $this->unifiedResponse(false, 'Appointment not found.', [], [], 404);
-        }
-
-        return $this->unifiedResponse(true, 'Appointment details.', $appointment);
+    if (!$appointment) {
+        return $this->unifiedResponse(false, 'Appointment not found.', [], [], 404);
     }
+
+    return $this->unifiedResponse(true, 'Appointment details.', $appointment);
+}
+
     public function getPastAppointments($request)
 {
     $doctor = Auth::user()->doctor;
