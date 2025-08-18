@@ -45,9 +45,14 @@ class DoctorProfile extends Model
         };
     }
 
-    
+
     public function getIsApprovedAttribute()
     {
         return $this->status === 'approved';
     }
+    public function ratings()
+{
+    return $this->morphMany(\App\Models\Rating::class, 'rateable');
+}
+
 }
