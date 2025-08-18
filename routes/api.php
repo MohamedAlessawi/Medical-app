@@ -9,6 +9,7 @@ use App\Http\Controllers\Auth\TwoFactorController;
 use App\Http\Controllers\Auth\AdminUserController;
 use \App\Http\Controllers\Api\Patient\PatientProfileController;
 use \App\Http\Controllers\Api\Patient\PatientAppointmentController;
+use App\Http\Controllers\Api\Patient\RatingController;
 
 
 use App\Http\Controllers\Api\Doctor\DoctorAppointmentController;
@@ -38,6 +39,8 @@ use App\Http\Controllers\Doctor\InvitationController;
 use App\Http\Controllers\Admin\CenterController as AdminCenterController;
 
 use App\Http\Controllers\SuperAdmin\ServiceCatalogController;
+use App\Http\Controllers\Api\Rating\RatingViewController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -71,7 +74,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('2fa/enable', [TwoFactorController::class, 'enable']);
     Route::post('2fa/disable', [TwoFactorController::class, 'disable']);
     Route::post('2fa/verify', [TwoFactorController::class, 'verify']);
-
+    Route::get('ratings/doctors/{user}', [RatingViewController::class, 'getDoctorRatings']);
+    Route::get('ratings/centers/{center}', [RatingViewController::class, 'getCenterRatings']);
 
 });
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
@@ -99,6 +103,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/patient/appointment-requests', [PatientAppointmentController::class, 'requestAppointment']);
     Route::get('/patient/appointment-requests', [PatientAppointmentController::class, 'getAppointmentRequests']);
+
+    Route::middleware(['auth:sanctum','role:patient'])->prefix('patient')->group(function () {
+    Route::post('/ratings/doctor', [RatingController::class, 'rateDoctor']);
+    Route::post('/ratings/center', [RatingController::class, 'rateCenter']);
+});
+
 
 
 });

@@ -73,5 +73,15 @@ class Center extends Model
     {
         return $this->hasMany(\App\Models\CenterWorkingHour::class);
     }
+    public function ratings()
+{
+    return $this->morphMany(\App\Models\Rating::class, 'rateable');
+}
+
+public function getAverageRatingAttribute()
+{
+    return round($this->ratings()->avg('score') ?? 0, 1);
+}
+
 
 }
