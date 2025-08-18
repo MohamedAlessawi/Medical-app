@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Secretary extends Model
 {
     use HasFactory;
-    protected $fillable = ['user_id', 'center_id', 'is_active'];
+    protected $fillable = ['user_id', 'center_id','shift' , 'is_active'];
     public $timestamps = false;
     protected $casts = ['is_active' => 'boolean'];
 

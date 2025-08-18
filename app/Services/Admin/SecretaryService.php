@@ -20,8 +20,17 @@ class SecretaryService
 
     public function index()
     {
-        $data = $this->repo->listByCenter($this->myCenterId());
+        $data = $this->repo->listByCenterFormatted($this->myCenterId());
         return $this->unifiedResponse(true, 'Secretaries fetched.', $data);
+    }
+
+    public function update(int $userId, array $payload)
+    {
+        $updated = $this->repo->updateDetails($userId, $this->myCenterId(), $payload);
+        if (!$updated) {
+            return $this->unifiedResponse(false, 'Secretary not found for this center.', [], [], 404);
+        }
+        return $this->unifiedResponse(true, 'Secretary updated.', $updated);
     }
 
     public function toggle(int $userId, bool $isActive)

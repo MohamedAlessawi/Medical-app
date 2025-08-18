@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ToggleStatusRequest;
+use App\Http\Requests\Admin\UpdateSecretaryRequest;
 use App\Services\Admin\SecretaryService;
 
 class SecretaryManagementController extends Controller
@@ -23,5 +24,10 @@ class SecretaryManagementController extends Controller
     public function remove($userId)
     {
         return $this->service->remove((int)$userId);
+    }
+
+    public function update($userId, UpdateSecretaryRequest $r)
+    {
+        return $this->service->update((int)$userId, $r->validated());
     }
 }

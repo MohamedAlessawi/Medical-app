@@ -221,6 +221,7 @@ Route::middleware(['auth:sanctum','role:admin'])->prefix('admin')->group(functio
     Route::put('/center/working-hours', [AdminCenterController::class, 'workingHoursBulkUpdate']);
 
     Route::get('/secretaries', [SecretaryManagementController::class, 'index']);
+    Route::put('secretaries/{userId}', [SecretaryManagementController::class, 'update']); 
     Route::put('/secretaries/{userId}/status', [SecretaryManagementController::class, 'toggle']);
     Route::delete('/secretaries/{userId}', [SecretaryManagementController::class, 'remove']);
 
