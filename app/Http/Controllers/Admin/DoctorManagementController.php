@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\InviteDoctorRequest;
 use App\Http\Requests\Admin\ToggleStatusRequest;
 use App\Services\Admin\DoctorService;
+use Illuminate\Http\Request;
 
 class DoctorManagementController extends Controller
 {
@@ -29,5 +30,16 @@ class DoctorManagementController extends Controller
     public function remove($doctorId)
     {
         return $this->service->remove((int)$doctorId);
+    }
+
+    // public function candidates()
+    // {
+    //     return $this->service->candidates();
+    // }
+
+
+    public function candidates(Request $request)
+    {
+        return $this->service->candidates($request->query('search'));
     }
 }

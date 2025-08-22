@@ -189,13 +189,13 @@ Route::middleware(['auth:sanctum', 'role:secretary'])->prefix('secretary')->grou
     Route::get('/doctors', [DoctorController::class, 'index']);
     Route::get('/doctors/{id}', [DoctorController::class, 'show']);
 
-    Route::get('/doctors/{id}/working-hours', [DoctorController::class, 'getWorkingHours']);
-    Route::post('/doctors/{id}/working-hours', [DoctorController::class, 'storeWorkingHour']);
-    Route::put('/doctors/working-hours/{hour_id}', [DoctorController::class, 'updateWorkingHour']);
-    Route::delete('/doctors/working-hours/{hour_id}', [DoctorController::class, 'deleteWorkingHour']);
+    // Route::get('/doctors/{id}/working-hours', [DoctorController::class, 'getWorkingHours']);
+    // Route::post('/doctors/{id}/working-hours', [DoctorController::class, 'storeWorkingHour']);
+    // Route::put('/doctors/working-hours/{hour_id}', [DoctorController::class, 'updateWorkingHour']);
+    // Route::delete('/doctors/working-hours/{hour_id}', [DoctorController::class, 'deleteWorkingHour']);
 
-    Route::get('/doctors/search', [DoctorController::class, 'search']);
-    Route::get('/patients/search', [PatientController::class, 'search']);
+    // Route::get('/doctors/search', [DoctorController::class, 'search']);
+    // Route::get('/patients/search', [PatientController::class, 'search']);
 
     /////////////////////////
     Route::get('/doctors/{id}/appointments', [DoctorController::class, 'getAppointments']);
@@ -231,7 +231,7 @@ Route::middleware(['auth:sanctum','role:admin'])->prefix('admin')->group(functio
     Route::put('/center/working-hours', [AdminCenterController::class, 'workingHoursBulkUpdate']);
 
     Route::get('/secretaries', [SecretaryManagementController::class, 'index']);
-    Route::put('secretaries/{userId}', [SecretaryManagementController::class, 'update']); 
+    Route::put('secretaries/{userId}', [SecretaryManagementController::class, 'update']);
     Route::put('/secretaries/{userId}/status', [SecretaryManagementController::class, 'toggle']);
     Route::delete('/secretaries/{userId}', [SecretaryManagementController::class, 'remove']);
 
@@ -239,6 +239,13 @@ Route::middleware(['auth:sanctum','role:admin'])->prefix('admin')->group(functio
     Route::post('/doctor-invitations', [DoctorManagementController::class, 'invite']);
     Route::put('/doctors/{doctorId}/status', [DoctorManagementController::class, 'toggle']);
     Route::delete('/doctors/{doctorId}', [DoctorManagementController::class, 'remove']);
+    Route::get('doctors/candidates', [DoctorManagementController::class, 'candidates']); 
+
+
+    Route::get('/doctors/{id}/working-hours', [DoctorController::class, 'getWorkingHours']);
+    Route::post('/doctors/{id}/working-hours', [DoctorController::class, 'storeWorkingHour']);
+    Route::put('/doctors/working-hours/{hour_id}', [DoctorController::class, 'updateWorkingHour']);
+    Route::delete('/doctors/working-hours/{hour_id}', [DoctorController::class, 'deleteWorkingHour']);
 
     Route::get('/services/catalog', [ServiceManagementController::class, 'catalog']);
     Route::get('/centers/services', [ServiceManagementController::class, 'index']);

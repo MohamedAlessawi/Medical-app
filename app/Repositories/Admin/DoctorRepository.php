@@ -42,4 +42,62 @@ class DoctorRepository
     {
         Doctor::where('id', $doctorId)->delete();
     }
+
+    // public function listDoctorsNotInCenter(int $centerId)
+    // {
+    //     return \DB::table('users')
+    //         ->join('user_roles', 'users.id', '=', 'user_roles.user_id')
+    //         ->join('roles', 'roles.id', '=', 'user_roles.role_id')
+    //         ->where('roles.name', 'doctor')
+    //         // استثناء أي ربط بنفس مركز الأدمن الحالي فقط
+    //         ->whereNotExists(function ($sub) use ($centerId) {
+    //             $sub->select(\DB::raw(1))
+    //                 ->from('doctors')
+    //                 ->whereColumn('doctors.user_id', 'users.id')
+    //                 ->where('doctors.center_id', $centerId);
+    //         })
+    //         ->select([
+    //             'users.id as user_id',
+    //             'users.full_name',
+    //             'users.email',
+    //             'users.phone',
+    //             \DB::raw("(select count(*) from doctors d where d.user_id = users.id) as centers_count")
+    //         ])
+    //         ->orderBy('users.full_name')
+    //         ->get();
+    // }
+
+
+    public function listDoctorsNotInCenter(int $centerId, ?string $search = null)
+    {
+        $q = \DB::table('users')
+            ->join('user_roles', 'users.id', '=', 'user_roles.user_id')
+            ->join('roles', 'roles.id', '=', 'user_roles.role_id')
+            ->where('roles.name', 'doctor')
+            ->whereNotExists(function ($sub) use ($centerId) {
+                $sub->select(\DB::raw(1))
+                    ->from('doctors')
+                    ->whereColumn('doctors.user_id', 'users.id')
+                    ->where('doctors.center_id', $centerId);
+            });
+
+        if ($search) {
+            $q->where(function ($w) use ($search) {
+                $w->where('users.full_name', 'like', "%{$search}%")
+                ->orWhere('users.email', 'like', "%{$search}%")
+                ->orWhere('users.phone', 'like', "%{$search}%");
+            });
+        }
+
+        $q->select([
+            'users.id as user_id',
+            'users.full_name',
+            'users.email',
+            'users.phone',
+            \DB::raw("(select count(*) from doctors d where d.user_id = users.id) as centers_count")
+        ])->orderBy('users.full_name');
+
+        return $q->get();
+    }
+
 }

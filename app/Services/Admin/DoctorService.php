@@ -50,4 +50,21 @@ class DoctorService
         $this->doctorRepo->removeFromCenter($doctorId);
         return $this->unifiedResponse(true, 'Doctor unlinked from center.');
     }
+
+    // public function candidates()
+    // {
+    //     $centerId = $this->myCenterId();
+    //     $data = $this->doctorRepo->listDoctorsNotInCenter($centerId);
+    //     return $this->unifiedResponse(true, 'Doctor users not linked to my center fetched.', $data);
+    // }
+
+
+    public function candidates(?string $search = null)
+    {
+        $centerId = $this->myCenterId();
+        $data = $this->doctorRepo->listDoctorsNotInCenter($centerId, $search);
+
+        return $this->unifiedResponse(true, 'Doctor users not linked to my center fetched.', $data);
+    }
+
 }
