@@ -114,8 +114,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 Route::get('centers/{centerId}/details', [PatientAppointmentController::class, 'getCenterDetails']);
 
-Route::get('centers/{centerId}/specialties/{specialtyId}/doctors/{doctorId}/available-slots', 
-    [PatientAppointmentController::class, 'getAvailableSlotsBySpecialty']);
+
 
 
     Route::get('doctors/{doctorId}/profile', [PatientAppointmentController::class, 'getDoctorProfile']);
