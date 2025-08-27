@@ -110,6 +110,20 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 
+/////////////////////////////////////////////////////////////////////
+
+Route::get('centers/{centerId}/details', [PatientAppointmentController::class, 'getCenterDetails']);
+
+Route::get('centers/{centerId}/specialties/{specialtyId}/doctors/{doctorId}/available-slots', 
+    [PatientAppointmentController::class, 'getAvailableSlotsBySpecialty']);
+
+
+    Route::get('doctors/{doctorId}/profile', [PatientAppointmentController::class, 'getDoctorProfile']);
+
+    Route::get('specialties/{specialtyId}/centers-doctors', [PatientAppointmentController::class, 'getCentersAndDoctorsBySpecialty']);
+
+    /////////////////////////////////////////////////////////////////////
+
 
 });
 //Doctor
@@ -271,3 +285,12 @@ Route::get('/search/advanced', [SearchController::class, 'advancedSearch']);
 Route::get('/search/specialties', [SearchController::class, 'searchSpecialties']);
 Route::get('/search/doctors', [SearchController::class, 'searchDoctors']);
 Route::get('/search/centers', [SearchController::class, 'searchCenters']);
+
+
+
+
+
+////////////////////////////////////////////////////////////////////
+
+
+

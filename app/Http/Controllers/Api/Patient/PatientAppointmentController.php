@@ -57,4 +57,34 @@ class PatientAppointmentController extends Controller
     {
         return $this->appointmentService->getAppointmentRequests($request);
     }
+
+
+     /////////////////////////////////////////////////////////////////////////
+
+
+     public function getCenterDetails($centerId, PatientAppointmentService $service)
+     {
+         return $service->getCenterDetails($centerId);
+     }
+     
+     ///////////////////////////////////////////////////////////////////////////////
+     
+     public function getAvailableSlotsBySpecialty($centerId, $specialtyId, $doctorId, Request $request,PatientAppointmentService $service)
+     {
+         return $service->getAvailableSlotsBySpecialty($centerId, $specialtyId, $doctorId,$request);
+     }
+     
+     /////////////////////////////////////////////////////////////////////////////////
+     
+     public function getDoctorProfile($doctorId, PatientAppointmentService $service)
+     {
+         return $service->getDoctorProfile($doctorId);
+     }
+     
+     ///////////////////////////////////////////////////////////////////////////////
+     
+     public function getCentersAndDoctorsBySpecialty($specialtyId, PatientAppointmentService $service)
+     {
+         return $service->getCentersAndDoctorsBySpecialty($specialtyId);
+     }
 }
