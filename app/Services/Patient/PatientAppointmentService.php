@@ -6,6 +6,7 @@ use App\Models\{Center, Specialty, Doctor, DoctorProfile, WorkingHour, Appointme
 use App\Traits\ApiResponseTrait;
 use App\Http\Requests\Patient\AppointmentRequestRequest;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 
 class PatientAppointmentService
@@ -206,68 +207,74 @@ class PatientAppointmentService
 
 
     public function requestAppointment(AppointmentRequestRequest $request)
-{
-    $validated = $request->validated();
-    $patientId = $request->user()->id;
-
-    $doctor = Doctor::where('id', $validated['doctor_id'])
-        ->where('center_id', $validated['center_id'])
-        ->first();
-
-    if (!$doctor) {
-        return $this->unifiedResponse(false, 'Doctor not found in this center.', [], [], 404);
+    {
+        $validated = $request->validated();
+        $patientId = $request->user()->id;
+    
+        $doctor = Doctor::where('id', $validated['doctor_id'])
+            ->where('center_id', $validated['center_id'])
+            ->first();
+    
+        if (!$doctor) {
+            return $this->unifiedResponse(false, 'Doctor not found in this center.', [], [], 404);
+        }
+    
+        $appointmentDateTime = Carbon::parse($validated['requested_date'] . ' ' . $validated['requested_time']);
+    
+        if ($appointmentDateTime->isPast()) {
+            return $this->unifiedResponse(false, 'Cannot book in the past.', [], [], 422);
+        }
+    
+        $dayOfWeek = $appointmentDateTime->format('l');
+    
+        $workingHour = WorkingHour::where('doctor_id', $doctor->id)
+            ->where('day_of_week', $dayOfWeek)
+            ->first();
+    
+        if (!$workingHour) {
+            return $this->unifiedResponse(false, 'Doctor does not work on this day.', [], [], 422);
+        }
+    
+        $requestedTime = Carbon::parse($validated['requested_time']);
+        $startTime = Carbon::parse($workingHour->start_time);
+        $endTime = Carbon::parse($workingHour->end_time);
+    
+        if ($requestedTime->lt($startTime) || $requestedTime->gte($endTime)) {
+            return $this->unifiedResponse(false, 'Requested time is outside doctor\'s working hours.', [], [], 422);
+        }
+    
+        $availableSlots = $this->calculateAvailableSlots(
+            $doctor->id,
+            $doctor->center_id,
+            $appointmentDateTime->toDateString(),
+            $workingHour
+        );
+    
+        if (!in_array($requestedTime->format('H:i'), $availableSlots)) {
+            return $this->unifiedResponse(false, 'Requested time is not available.', [], [], 409);
+        }
+    
+        $conflictingConfirmed = AppointmentRequest::where('doctor_id', $doctor->id)
+            ->where('requested_date', $appointmentDateTime)
+            ->where('status', 'approved') 
+            ->exists();
+    
+        if ($conflictingConfirmed) {
+            return $this->unifiedResponse(false, 'This time slot is already booked.', [], [], 409);
+        }
+    
+        $appointmentRequest = AppointmentRequest::create([
+            'patient_id' => $patientId,
+            'doctor_id' => $doctor->id,
+            'center_id' => $doctor->center_id,
+            'requested_date' => $appointmentDateTime,
+            'status' => 'pending', // يبقى قيد الانتظار
+            'notes' => $validated['notes'] ?? null,
+        ]);
+    
+        return $this->unifiedResponse(true, 'Appointment request submitted successfully.', $appointmentRequest);
     }
-
-    $appointmentDateTime = Carbon::parse($validated['requested_date'] . ' ' . $validated['requested_time']);
-
-    if ($appointmentDateTime->isPast()) {
-        return $this->unifiedResponse(false, 'Cannot book in the past.', [], [], 422);
-    }
-
-    $dayOfWeek = $appointmentDateTime->format('l');
-
-    $workingHour = WorkingHour::where('doctor_id', $doctor->id)
-        ->where('day_of_week', $dayOfWeek)
-        ->first();
-
-    if (!$workingHour) {
-        return $this->unifiedResponse(false, 'Doctor does not work on this day.', [], [], 422);
-    }
-
-    $requestedTime = Carbon::parse($validated['requested_time']);
-    $startTime = Carbon::parse($workingHour->start_time);
-    $endTime = Carbon::parse($workingHour->end_time);
-
-    if ($requestedTime->lt($startTime) || $requestedTime->gte($endTime)) {
-        return $this->unifiedResponse(false, 'Requested time is outside doctor\'s working hours.', [], [], 422);
-    }
-
-    $availableSlots = $this->calculateAvailableSlots($doctor->id, $doctor->center_id, $appointmentDateTime->toDateString(), $workingHour);
-
-    if (!in_array($requestedTime->format('H:i'), $availableSlots)) {
-        return $this->unifiedResponse(false, 'Requested time is not available.', [], [], 409);
-    }
-
-    $conflictingAppointment = AppointmentRequest::where('patient_id', $patientId)
-        ->where('requested_date', $appointmentDateTime)
-        ->whereIn('status', ['pending','approved'])
-        ->exists();
-
-    if ($conflictingAppointment) {
-        return $this->unifiedResponse(false, 'You already have an appointment at this time.', [], [], 409);
-    }
-
-    $appointmentRequest = AppointmentRequest::create([
-        'patient_id' => $patientId,
-        'doctor_id' => $doctor->id,
-        'center_id' => $doctor->center_id,
-        'requested_date' => $appointmentDateTime,
-        'status' => 'pending',
-        'notes' => $validated['notes'] ?? null,
-    ]);
-
-    return $this->unifiedResponse(true, 'Appointment request submitted successfully.', $appointmentRequest);
-}
+    
 
 
 
@@ -504,6 +511,32 @@ public function getCentersAndDoctorsBySpecialty($specialtyId)
     return $this->unifiedResponse(true, 'Centers and doctors fetched successfully.', $data);
 }
 
+public function cancelPendingAppointmentRequest($id)
+{
+    $user = Auth::user();
+
+    $appointmentRequest = AppointmentRequest::where('id', $id)
+        ->where('patient_id', $user->id) 
+        ->where('status', 'pending') 
+        ->whereDate('requested_date', '>', Carbon::tomorrow()) 
+        ->first();
+
+    if (!$appointmentRequest) {
+        return $this->unifiedResponse(
+            false,
+            'Appointment request cannot be cancelled. Either it is already processed or it is too close to the appointment date.',
+            [],
+            [],
+            422
+        );
+    }
+
+    $appointmentRequest->update([
+        'status' => 'rejected'
+    ]);
+
+    return $this->unifiedResponse(true, 'Appointment request cancelled successfully.', $appointmentRequest);
+}
 
 
 

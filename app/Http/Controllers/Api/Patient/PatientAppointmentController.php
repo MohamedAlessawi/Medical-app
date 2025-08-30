@@ -87,4 +87,9 @@ class PatientAppointmentController extends Controller
      {
          return $service->getCentersAndDoctorsBySpecialty($specialtyId);
      }
+
+     public function cancelPendingAppointment($id)
+     {
+         return $this->appointmentService->cancelPendingAppointmentRequest($id);
+     }
 }
