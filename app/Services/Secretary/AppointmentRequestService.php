@@ -70,45 +70,38 @@ class AppointmentRequestService
     public function approveRequest($id)
     {
         $centerId = auth()->user()->secretaries->first()->center_id;
-
+    
         $appointmentRequest = AppointmentRequest::where('id', $id)
             ->where('center_id', $centerId)
             ->where('status', 'pending')
             ->first();
-
+    
         if (!$appointmentRequest) {
             return $this->unifiedResponse(false, 'Appointment request not found or already processed.', [], [], 404);
         }
-
-
-        $existingAppointmentExists = Appointment::where('doctor_id', $appointmentRequest->doctor_id)
-            ->whereDate('appointment_date', $appointmentRequest->requested_date->format('Y-m-d'))
-            ->where('appointment_time', $appointmentRequest->requested_date->format('H:i:s'))
-            ->where('status', '!=', 'cancelled')
+    
+        // تحقق إذا في طلب مؤكد بنفس الوقت مع نفس الدكتور
+        $conflictExists = AppointmentRequest::where('doctor_id', $appointmentRequest->doctor_id)
+            ->whereDate('requested_date', $appointmentRequest->requested_date->format('Y-m-d'))
+            ->whereTime('requested_date', $appointmentRequest->requested_date->format('H:i:s'))
+            ->where('status', 'approved')
             ->exists();
-
-        if ($existingAppointmentExists) {
+    
+        if ($conflictExists) {
             return $this->unifiedResponse(false, 'This time slot is no longer available.', [], [], 409);
         }
-
-
-        $appointment = Appointment::create([
-            'doctor_id' => $appointmentRequest->doctor_id,
-            'appointment_date' => $appointmentRequest->requested_date->format('Y-m-d'),
-            'appointment_time' => $appointmentRequest->requested_date->format('H:i:s'),
-            'booked_by' => $appointmentRequest->patient_id,
-            'status' => 'confirmed',
-            'notes' => $appointmentRequest->notes,
+    
+        // تحديث نفس السطر
+        $appointmentRequest->update([
+            'status' => 'approved'
         ]);
-
-
-        $appointmentRequest->update(['status' => 'deleted']);
-
+    
         return $this->unifiedResponse(true, 'Appointment request approved successfully.', [
-            'appointment_id' => $appointment->id,
             'appointment_request_id' => $appointmentRequest->id,
+            'status' => $appointmentRequest->status,
         ]);
     }
+    
 
 
     public function rejectRequest($id, $reason = null)
@@ -126,7 +119,7 @@ class AppointmentRequestService
 
 
         $appointmentRequest->update([
-            'status' => 'deleted',
+            'status' => 'rejected',
             'notes' => $appointmentRequest->notes . "\nRejection reason: " . ($reason ?? 'No reason provided'),
         ]);
 

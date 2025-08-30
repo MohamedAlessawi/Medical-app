@@ -215,7 +215,7 @@ Route::middleware(['auth:sanctum', 'role:secretary'])->prefix('secretary')->grou
     Route::post('/doctors/book-appointment', [DoctorController::class, 'bookAppointment']);
     Route::put('/appointments/{id}', [DoctorController::class, 'updateAppointment']);
     Route::delete('/appointments/{id}', [DoctorController::class, 'deleteAppointment']);
-    Route::put('/appointments/{id}/attendance', [DoctorController::class, 'confirmAttendance']);
+    Route::post('/appointments/{id}/attendance', [DoctorController::class, 'confirmAttendance']);
 
     Route::get('/dashboard-stats', [DoctorController::class, 'dashboardStats']);
     Route::get('/appointments/today', [DoctorController::class, 'todaysAppointmentsForCenter']);

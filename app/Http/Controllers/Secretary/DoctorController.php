@@ -61,25 +61,34 @@ class DoctorController extends Controller
 
     public function bookAppointment(Request $request)
     {
-        $data = $request->only(['doctor_id', 'appointment_date', 'appointment_time', 'patient_id', 'status', 'attendance_status', 'notes']);
-        return $this->appointmentService->createAppointment($data);
+        $data = $request->validate([
+            'doctor_id'      => 'required|exists:doctors,id',
+            'patient_id'     => 'required|exists:users,id',
+            'requested_date' => 'required|date_format:Y-m-d H:i:s|after:now',
+            'notes'          => 'nullable|string',
+        ]);
+
+        return $this->appointmentService->createAppointmentRequest($data);
     }
 
     public function updateAppointment(Request $request, $id)
     {
-        $data = $request->only(['doctor_id', 'appointment_date', 'appointment_time', 'booked_by', 'status', 'attendance_status', 'notes']);
-        return $this->appointmentService->updateAppointment($id, $data);
+        $data = $request->only(['doctor_id', 'requested_date', 'patient_id', 'notes']);
+        return $this->appointmentService->updateAppointmentRequest($id, $data);
     }
 
     public function deleteAppointment($id)
     {
-        return $this->appointmentService->deleteAppointment($id);
+        return $this->appointmentService->deleteAppointmentRequest($id);
     }
 
     public function confirmAttendance(Request $request, $id)
     {
-        $status = $request->input('attendance_status');
-        return $this->appointmentService->confirmAttendance($id, $status);
+        $request->validate([
+            'status' => 'required|in:present,absent',
+        ]);
+
+        return $this->appointmentService->confirmAttendance($id, $request->status);
     }
 
     public function dashboardStats()
