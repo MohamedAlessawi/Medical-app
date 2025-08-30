@@ -80,7 +80,6 @@ class AppointmentRequestService
             return $this->unifiedResponse(false, 'Appointment request not found or already processed.', [], [], 404);
         }
     
-        // تحقق إذا في طلب مؤكد بنفس الوقت مع نفس الدكتور
         $conflictExists = AppointmentRequest::where('doctor_id', $appointmentRequest->doctor_id)
             ->whereDate('requested_date', $appointmentRequest->requested_date->format('Y-m-d'))
             ->whereTime('requested_date', $appointmentRequest->requested_date->format('H:i:s'))
@@ -91,7 +90,6 @@ class AppointmentRequestService
             return $this->unifiedResponse(false, 'This time slot is no longer available.', [], [], 409);
         }
     
-        // تحديث نفس السطر
         $appointmentRequest->update([
             'status' => 'approved'
         ]);
@@ -143,4 +141,36 @@ class AppointmentRequestService
 
         return $this->unifiedResponse(true, 'Appointment request stats fetched successfully.', $stats);
     }
+
+    ///////////////////////////////////////////////////////////////
+
+    public function getIgnoredAppointmentRequests(Request $request)
+{
+    $centerId = auth()->user()->secretaries->first()->center_id;
+
+    $requests = AppointmentRequest::where('center_id', $centerId)
+        ->where('status', 'pending')
+        ->whereDate('requested_date', '<', now()->toDateString()) 
+        ->with(['patient', 'doctor.user.doctorProfile.specialty', 'center'])
+        ->orderBy('requested_date', 'asc')
+        ->get()
+        ->map(function ($request) {
+            return [
+                'id' => $request->id,
+                'patient_name' => $request->patient_name,
+                'patient_phone' => $request->patient->phone,
+                'doctor_name' => $request->doctor_name,
+                'specialty' => $request->specialty_name,
+                'center_name' => $request->center_name,
+                'requested_date' => $request->requested_date_formatted,
+                'requested_time' => $request->requested_time_formatted,
+                'status' => $request->status,
+                'notes' => $request->notes,
+                'created_at' => $request->created_at_formatted,
+            ];
+        });
+
+    return $this->unifiedResponse(true, 'Ignored appointment requests fetched successfully.', $requests);
+}
+
 }

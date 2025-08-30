@@ -45,4 +45,9 @@ class AppointmentRequestController extends Controller
     {
         return $this->appointmentRequestService->getStats();
     }
+
+    public function getIgnoredAppointmentRequests(Request $request)
+    {
+        return $this->appointmentRequestService->getIgnoredAppointmentRequests($request);
+    }
 }

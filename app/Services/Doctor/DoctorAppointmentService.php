@@ -6,6 +6,8 @@ use App\Repositories\Doctor\AppointmentRepository;
 use Illuminate\Support\Facades\Auth;
 use App\Traits\ApiResponseTrait;
 use App\Models\Appointment;
+use Illuminate\Http\Request;
+use App\Models\AppointmentRequest;
 use Illuminate\Support\Carbon;
 
 
@@ -20,7 +22,9 @@ class DoctorAppointmentService
         $this->appointmentRepo = $appointmentRepo;
     }
 
-    public function getDoctorAppointments($request)
+  
+
+public function getDoctorAppointments(Request $request)
 {
     $doctor = Auth::user()->doctor;
 
@@ -31,23 +35,26 @@ class DoctorAppointmentService
     $filter = $request->query('filter');
     $perPage = $request->query('per_page', 10);
 
-    $appointments = Appointment::with([
-            'user:id,full_name,email,phone,profile_photo'
+    $appointments = AppointmentRequest::with([
+            'patient:id,full_name,email,phone,profile_photo'
         ])
         ->where('doctor_id', $doctor->id)
-        ->where('status', 'confirmed')
+        ->where('status', 'approved')
         ->when($filter, function ($query) use ($filter) {
             if ($filter === 'upcoming') {
-                $query->where('appointment_date', '>=', now());
+                $query->where('requested_date', '>', now()->endOfDay());
             } elseif ($filter === 'past') {
-                $query->where('appointment_date', '<', now());
+                $query->where('requested_date', '<', now()->startOfDay());
+            } elseif ($filter === 'today') {
+                $query->whereDate('requested_date', Carbon::today());
             }
         })
-        ->orderBy('appointment_date')
+        ->orderBy('requested_date')
         ->paginate($perPage);
 
     return $this->unifiedResponse(true, 'Appointments fetched successfully.', $appointments);
 }
+
 
     public function showAppointment($id)
 {
