@@ -17,7 +17,6 @@ trait FileUploadTrait
 
     public function jsonResponse($message, $status=200, $data=[])
     {
-
         return response()->json(array_merge(["message" => $message], $data), $status);
     }
 }

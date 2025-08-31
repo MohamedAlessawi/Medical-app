@@ -239,8 +239,7 @@ Route::middleware(['auth:sanctum','role:admin'])->prefix('admin')->group(functio
     Route::post('/doctor-invitations', [DoctorManagementController::class, 'invite']);
     Route::put('/doctors/{doctorId}/status', [DoctorManagementController::class, 'toggle']);
     Route::delete('/doctors/{doctorId}', [DoctorManagementController::class, 'remove']);
-    Route::get('doctors/candidates', [DoctorManagementController::class, 'candidates']); 
-
+    Route::get('doctors/candidates', [DoctorManagementController::class, 'candidates']);
 
     Route::get('/doctors/{id}/working-hours', [DoctorController::class, 'getWorkingHours']);
     Route::post('/doctors/{id}/working-hours', [DoctorController::class, 'storeWorkingHour']);
