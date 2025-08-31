@@ -55,4 +55,11 @@ class PatientController extends Controller
     {
         return $this->patientService->deletePatientFromCenter($id);
     }
+
+
+
+   
+
+
+
 }

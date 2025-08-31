@@ -13,7 +13,14 @@ class Specialty extends Model
 
     public function doctors()
     {
-        return $this->hasMany(DoctorProfile::class, 'specialty_id');
+        return $this->hasManyThrough(
+            Doctor::class,
+            DoctorProfile::class, 
+            'specialty_id',       
+            'user_id',            
+            'id',                 
+            'user_id'             
+        );
     }
 
 

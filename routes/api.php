@@ -110,6 +110,21 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 
+/////////////////////////////////////////////////////////////////////
+
+Route::get('centers/{centerId}/details', [PatientAppointmentController::class, 'getCenterDetails']);
+
+
+
+
+    Route::get('doctors/{doctorId}/profile', [PatientAppointmentController::class, 'getDoctorProfile']);
+
+    Route::get('specialties/{specialtyId}/centers-doctors', [PatientAppointmentController::class, 'getCentersAndDoctorsBySpecialty']);
+
+        Route::patch('appointments/{id}/cancel', [PatientAppointmentController::class, 'cancelPendingAppointment']);
+
+    /////////////////////////////////////////////////////////////////////
+
 
 });
 //Doctor
@@ -185,6 +200,9 @@ Route::middleware(['auth:sanctum', 'role:secretary'])->prefix('secretary')->grou
     Route::put('/patients/{id}', [PatientController::class, 'update']);
     Route::put('/patients/{id}/profile', [PatientController::class, 'updateProfile']);
     Route::delete('/patients/{id}', [PatientController::class, 'destroy']);
+    //////////////////////////////////////////////////
+    Route::get('/appointment-requests/ignored', [AppointmentRequestController::class, 'getIgnoredAppointmentRequests']);
+
 
     Route::get('/doctors', [DoctorController::class, 'index']);
     Route::get('/doctors/{id}', [DoctorController::class, 'show']);
@@ -202,7 +220,7 @@ Route::middleware(['auth:sanctum', 'role:secretary'])->prefix('secretary')->grou
     Route::post('/doctors/book-appointment', [DoctorController::class, 'bookAppointment']);
     Route::put('/appointments/{id}', [DoctorController::class, 'updateAppointment']);
     Route::delete('/appointments/{id}', [DoctorController::class, 'deleteAppointment']);
-    Route::put('/appointments/{id}/attendance', [DoctorController::class, 'confirmAttendance']);
+    Route::post('/appointments/{id}/attendance', [DoctorController::class, 'confirmAttendance']);
 
     Route::get('/dashboard-stats', [DoctorController::class, 'dashboardStats']);
     Route::get('/appointments/today', [DoctorController::class, 'todaysAppointmentsForCenter']);
@@ -270,3 +288,12 @@ Route::get('/search/advanced', [SearchController::class, 'advancedSearch']);
 Route::get('/search/specialties', [SearchController::class, 'searchSpecialties']);
 Route::get('/search/doctors', [SearchController::class, 'searchDoctors']);
 Route::get('/search/centers', [SearchController::class, 'searchCenters']);
+
+
+
+
+
+////////////////////////////////////////////////////////////////////
+
+
+
