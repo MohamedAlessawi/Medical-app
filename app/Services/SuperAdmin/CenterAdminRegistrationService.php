@@ -100,14 +100,14 @@ class CenterAdminRegistrationService
                 'file_path' => $filePath,
             ]);
 
-            Mail::send('emails.new_admin', [
-                'email' => $user->email,
-                'password' => $user ? '[Use your existing password]' : $password,
-                'center_name' => $center->name
-            ], function ($message) use ($user) {
-                $message->to($user->email);
-                $message->subject('Center Admin Account Created');
-            });
+            // Mail::send('emails.new_admin', [
+            //     'email' => $user->email,
+            //     'password' => $user ? '[Use your existing password]' : $password,
+            //     'center_name' => $center->name
+            // ], function ($message) use ($user) {
+            //     $message->to($user->email);
+            //     $message->subject('Center Admin Account Created');
+            // });
 
             DB::commit();
 
