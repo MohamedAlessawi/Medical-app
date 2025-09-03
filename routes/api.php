@@ -224,7 +224,7 @@ Route::middleware(['auth:sanctum', 'role:secretary'])->prefix('secretary')->grou
 
     Route::get('/dashboard-stats', [DoctorController::class, 'dashboardStats']);
     Route::get('/appointments/today', [DoctorController::class, 'todaysAppointmentsForCenter']);
-    
+
     Route::post('/patients/{id}/upload-medical-file', [PatientController::class, 'uploadMedicalFile']);
     Route::get('/patients/{id}/medical-file', [PatientController::class, 'listMedicalFiles']);
     Route::delete('/patients/{patientId}/medical-file/{fileId}', [PatientController::class, 'deleteMedicalFile']);
@@ -273,6 +273,17 @@ Route::middleware(['auth:sanctum','role:admin'])->prefix('admin')->group(functio
     Route::delete('/centers/services/{id}', [ServiceManagementController::class, 'destroy']);
 
     Route::get('/appointment-requests', [AppointmentRequestController::class, 'index']);
+
+     // Dashboard
+    Route::get('/dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index']);
+
+    // Reports
+    Route::get('/reports/appointments-trend', [\App\Http\Controllers\Admin\ReportController::class, 'appointmentsTrend']);
+    Route::get('/reports/top-doctors', [\App\Http\Controllers\Admin\ReportController::class, 'topDoctors']);
+    Route::get('/reports/new-patients', [\App\Http\Controllers\Admin\ReportController::class, 'newPatients']);
+
+    Route::get('/reports/center-detailed', [\App\Http\Controllers\Admin\ReportController::class, 'centerDetailed']);
+
 
 });
 

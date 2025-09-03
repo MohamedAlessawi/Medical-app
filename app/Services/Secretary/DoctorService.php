@@ -110,24 +110,102 @@ class DoctorService
     public function addWorkingHour($doctorId, array $data)
     {
         try {
-            $data['doctor_id'] = $doctorId;
-            $hour = WorkingHour::create($data);
+            if ($err = $this->assertValidRange($data['start_time'], $data['end_time'])) {
+                return $this->unifiedResponse(false, 'Invalid time range.', [], $err, 422);
+            }
+
+            $userId = $this->getDoctorUserId((int)$doctorId);
+
+            $hasOverlap = $this->hasOverlapForDoctorUser(
+                $userId,
+                $data['day_of_week'],
+                $data['start_time'],
+                $data['end_time'],
+                null
+            );
+
+            if ($hasOverlap) {
+                return $this->unifiedResponse(
+                    false,
+                    'Working hour overlaps with an existing shift for this doctor user.',
+                    [],
+                    ['conflict' => 'overlap'],
+                    409
+                );
+            }
+
+            $data['doctor_id'] = (int)$doctorId;
+            $hour = \App\Models\WorkingHour::create($data);
+
             return $this->unifiedResponse(true, 'Working hour added successfully.', $hour);
-        } catch (Exception $e) {
+
+        } catch (\Exception $e) {
             return $this->unifiedResponse(false, 'Failed to add working hour.', [], ['error' => $e->getMessage()], 500);
         }
     }
 
+
+    // public function addWorkingHour($doctorId, array $data)
+    // {
+    //     try {
+    //         $data['doctor_id'] = $doctorId;
+    //         $hour = WorkingHour::create($data);
+    //         return $this->unifiedResponse(true, 'Working hour added successfully.', $hour);
+    //     } catch (Exception $e) {
+    //         return $this->unifiedResponse(false, 'Failed to add working hour.', [], ['error' => $e->getMessage()], 500);
+    //     }
+    // }
+
     public function updateWorkingHour($id, array $data)
     {
         try {
-            $hour = WorkingHour::findOrFail($id);
-            $hour->update($data);
+            $hour = \App\Models\WorkingHour::findOrFail($id);
+
+            $day   = $data['day_of_week'] ?? $hour->day_of_week;
+            $start = $data['start_time']  ?? $hour->start_time;
+            $end   = $data['end_time']    ?? $hour->end_time;
+
+            if ($err = $this->assertValidRange($start, $end)) {
+                return $this->unifiedResponse(false, 'Invalid time range.', [], $err, 422);
+            }
+
+            $userId = $this->getDoctorUserId((int)$hour->doctor_id);
+
+            $hasOverlap = $this->hasOverlapForDoctorUser($userId, $day, $start, $end, (int)$id);
+            if ($hasOverlap) {
+                return $this->unifiedResponse(
+                    false,
+                    'Working hour overlaps with an existing shift for this doctor user.',
+                    [],
+                    ['conflict' => 'overlap'],
+                    409
+                );
+            }
+
+            $hour->update([
+                'day_of_week' => $day,
+                'start_time'  => $start,
+                'end_time'    => $end,
+            ]);
+
             return $this->unifiedResponse(true, 'Working hour updated successfully.', $hour);
-        } catch (Exception $e) {
+
+        } catch (\Exception $e) {
             return $this->unifiedResponse(false, 'Failed to update working hour.', [], ['error' => $e->getMessage()], 500);
         }
     }
+
+
+    // public function updateWorkingHour($id, array $data)
+    // {
+    //     try {
+    //         $hour = WorkingHour::findOrFail($id);
+    //         $hour->update($data);
+    //         return $this->unifiedResponse(true, 'Working hour updated successfully.', $hour);
+    //     } catch (Exception $e) {
+    //         return $this->unifiedResponse(false, 'Failed to update working hour.', [], ['error' => $e->getMessage()], 500);
+    //     }
+    // }
 
     public function deleteWorkingHour($id)
     {
@@ -195,5 +273,37 @@ class DoctorService
             return $this->unifiedResponse(false, 'Failed to search doctors.', [], ['error' => $e->getMessage()], 500);
         }
     }
+
+    private function getDoctorUserId(int $doctorId): int
+    {
+        $doc = \App\Models\Doctor::select('user_id')->findOrFail($doctorId);
+        return (int) $doc->user_id;
+    }
+
+    private function hasOverlapForDoctorUser(int $userId, string $dayOfWeek, string $start, string $end, ?int $excludeId = null): bool
+    {
+        $q = \DB::table('working_hours as wh')
+            ->join('doctors as d', 'wh.doctor_id', '=', 'd.id')
+            ->where('d.user_id', $userId)
+            ->where('wh.day_of_week', $dayOfWeek);
+
+        if ($excludeId) {
+            $q->where('wh.id', '!=', $excludeId);
+        }
+
+        $q->where('wh.start_time', '<', $end)
+            ->where('wh.end_time',   '>', $start);
+
+        return $q->exists();
+    }
+
+    private function assertValidRange(string $start, string $end): ?array
+    {
+        if ($start >= $end) {
+            return ['error' => 'start_time must be before end_time'];
+        }
+        return null;
+    }
+
 
 }

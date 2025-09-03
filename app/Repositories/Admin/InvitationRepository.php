@@ -13,9 +13,22 @@ class InvitationRepository
 
     public function findPendingForDoctor(int $doctorUserId)
     {
-        return DoctorInvitation::where('doctor_user_id', $doctorUserId)
-                               ->where('status','pending')
-                               ->get();
+        {
+            return DoctorInvitation::query()
+                ->join('centers', 'doctor_invitations.center_id', '=', 'centers.id')
+                ->join('users as admins', 'doctor_invitations.invited_by', '=', 'admins.id')
+                ->where('doctor_invitations.doctor_user_id', $doctorUserId)
+                ->where('doctor_invitations.status', 'pending')
+                ->orderByDesc('doctor_invitations.created_at')
+                ->get([
+                    'doctor_invitations.*',
+                    'centers.name as center_name',
+                    'admins.full_name as invited_by_name',
+                ]);
+        }
+        // return DoctorInvitation::where('doctor_user_id', $doctorUserId)
+        //                        ->where('status','pending')
+        //                        ->get();
     }
 
     public function findMyPendingById(int $id, int $doctorUserId): DoctorInvitation
