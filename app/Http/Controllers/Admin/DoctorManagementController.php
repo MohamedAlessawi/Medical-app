@@ -32,12 +32,6 @@ class DoctorManagementController extends Controller
         return $this->service->remove((int)$doctorId);
     }
 
-    // public function candidates()
-    // {
-    //     return $this->service->candidates();
-    // }
-
-
     public function candidates(Request $request)
     {
         return $this->service->candidates($request->query('search'));

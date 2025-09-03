@@ -16,10 +16,13 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Exception;
+use App\Traits\FileUploadTrait;
+
 
 class CenterAdminRegistrationService
 {
     use ApiResponseTrait;
+    use FileUploadTrait;
 
     protected $userRepository;
 
@@ -85,11 +88,13 @@ class CenterAdminRegistrationService
                 'payment_date' => now(),
             ]);
 
-            $filePath = null;
-            if ($request->hasFile('license_file')) {
-                $file = $request->file('license_file');
-                $filePath = $file->store('licenses', 'public');
-            }
+            // $filePath = null;
+            // if ($request->hasFile('license_file')) {
+            //     $file = $request->file('license_file');
+            //     $filePath = $file->store('licenses', 'public');
+            // }
+            $licenseFilePath = $this->handleFileUpload($request, 'license_file', 'license_files');
+
 
             License::create([
                 'user_id' => $user->id,
@@ -97,7 +102,7 @@ class CenterAdminRegistrationService
                 'status' => 'pending',
                 'issued_by' => $request->issued_by,
                 'issue_date' => $request->issue_date,
-                'file_path' => $filePath,
+                'file_path' => $licenseFilePath,
             ]);
 
             // Mail::send('emails.new_admin', [

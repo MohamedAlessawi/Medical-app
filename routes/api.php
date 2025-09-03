@@ -224,7 +224,10 @@ Route::middleware(['auth:sanctum', 'role:secretary'])->prefix('secretary')->grou
 
     Route::get('/dashboard-stats', [DoctorController::class, 'dashboardStats']);
     Route::get('/appointments/today', [DoctorController::class, 'todaysAppointmentsForCenter']);
+    
     Route::post('/patients/{id}/upload-medical-file', [PatientController::class, 'uploadMedicalFile']);
+    Route::get('/patients/{id}/medical-file', [PatientController::class, 'listMedicalFiles']);
+    Route::delete('/patients/{patientId}/medical-file/{fileId}', [PatientController::class, 'deleteMedicalFile']);
 
 
     Route::get('/profile', [SecretaryProfileController::class, 'getProfile']);
@@ -268,6 +271,9 @@ Route::middleware(['auth:sanctum','role:admin'])->prefix('admin')->group(functio
     Route::get('/centers/services', [ServiceManagementController::class, 'index']);
     Route::post('/centers/services', [ServiceManagementController::class, 'store']);
     Route::delete('/centers/services/{id}', [ServiceManagementController::class, 'destroy']);
+
+    Route::get('/appointment-requests', [AppointmentRequestController::class, 'index']);
+
 });
 
 Route::middleware(['auth:sanctum','role:doctor'])->prefix('doctor')->group(function () {

@@ -22,7 +22,13 @@ class DoctorProfileRepository
     }
     public function getPendingProfiles()
     {
-        return DoctorProfile::with('user')->where('status', 'pending')->get();
+        // return DoctorProfile::with('user')->where('status', 'pending')->get();
+        return DoctorProfile::with([
+                'user:id,full_name,email,phone',
+                'specialty:id,name'
+            ])
+            ->where('status', 'pending')
+            ->get(['id','user_id','specialty_id','certificate','status','created_at']);
     }
 
     public function find($id)

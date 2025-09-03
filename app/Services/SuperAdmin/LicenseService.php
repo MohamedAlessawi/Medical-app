@@ -5,6 +5,7 @@ namespace App\Services\SuperAdmin;
 use App\Models\License;
 use App\Traits\ApiResponseTrait;
 
+
 class LicenseService
 {
     use ApiResponseTrait;

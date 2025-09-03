@@ -30,13 +30,23 @@ class DoctorService
 
     public function invite(array $payload)
     {
-        $inv = $this->invitationRepo->create([
-            'center_id'      => $this->myCenterId(),
-            'doctor_user_id' => $payload['doctor_user_id'],
-            'invited_by'     => Auth::id(),
-            'message'        => $payload['message'] ?? null,
-        ]);
-        return $this->unifiedResponse(true, 'Invitation sent.', $inv);
+        // $inv = $this->invitationRepo->create([
+        //     'center_id'      => $this->myCenterId(),
+        //     'doctor_user_id' => $payload['doctor_user_id'],
+        //     'invited_by'     => Auth::id(),
+        //     'message'        => $payload['message'] ?? null,
+        // ]);
+        // return $this->unifiedResponse(true, 'Invitation sent.', $inv);
+
+        $result = $this->invitationRepo->toggleForCenterAndDoctor(
+            $this->myCenterId(),
+            $payload['doctor_user_id'],
+            \Auth::id(),
+            $payload['message'] ?? null
+        );
+
+        $msg = $result['mode'] === 'sent' ? 'Invitation sent.' : 'Invitation canceled.';
+        return $this->unifiedResponse(true, $msg, $result);
     }
 
     public function toggleStatus(int $doctorId, bool $isActive)

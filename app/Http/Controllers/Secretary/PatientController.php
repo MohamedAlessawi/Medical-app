@@ -56,10 +56,14 @@ class PatientController extends Controller
         return $this->patientService->deletePatientFromCenter($id);
     }
 
+    public function listMedicalFiles($id)
+    {
+        return $this->medicalFileService->listPatientFiles($id);
+    }
 
-
-   
-
-
-
+    public function deleteMedicalFile($patientId, $fileId)
+    {
+        return $this->medicalFileService->deleteMedicalFile($patientId, $fileId);
+    }
+    
 }

@@ -35,7 +35,7 @@ class RegisterService
                 'email' => $request->email,
                 'phone' => $request->phone,
                 'password' => Hash::make($request->password),
-                'profile_photo' => $profilePhotoPath,
+                'profile_photo' => $profilePhotoPath['path'] ?? null,
                 'ip_address' => $request->ip(),
                 'birthdate' => $request->birthdate,
                 'gender'    => $request->gender,
@@ -56,7 +56,8 @@ class RegisterService
             //     $message->subject('Email Verification Code');
             // });
 
-            return $this->unifiedResponse(true, 'Registration successful, please check your email for verification code.', ['user_id' => $user->id], [], 201);
+            return $this->unifiedResponse(true, 'Registration successful, please check your email for verification code.', ['user_id' => $user->id,'profile_photo'   => $user->profile_photo,           // path المخزون
+            'profile_photo_url' => $upload['url'] ?? ($user->profile_photo ? asset('storage/'.$user->profile_photo) : null),], [], 201);
 
         } catch (Exception $e) {
             Log::error('Registration error: ' . $e->getMessage());
@@ -102,7 +103,7 @@ class RegisterService
         \App\Models\DoctorProfile::create([
             'user_id'             => $user->id,
             'specialty_id'        => $validated['specialty_id'],
-            'certificate'         => $certificatePath,
+            'certificate'         => $certificatePath['path'] ?? null,
             'status'              => 'pending',
         ]);
 
@@ -115,10 +116,10 @@ class RegisterService
 
         Cache::put($request->ip(), [$code, $validated['email']], now()->addMinutes(3));
 
-        Mail::send('emails.verifyEmail', ['token' => $code], function ($message) use ($validated) {
-            $message->to($validated['email']);
-            $message->subject('Email Verification Code');
-        });
+        // Mail::send('emails.verifyEmail', ['token' => $code], function ($message) use ($validated) {
+        //     $message->to($validated['email']);
+        //     $message->subject('Email Verification Code');
+        // });
 
         return $this->unifiedResponse(true, 'Registration successful. Please check your email for verification code.', [
             'user_id' => $user->id,
