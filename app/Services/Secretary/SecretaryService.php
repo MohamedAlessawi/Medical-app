@@ -22,12 +22,18 @@ class SecretaryService
         }
 
         $secretary = Secretary::where('user_id', $userId)->first();
+
+        $photoPath = $user->profile_photo;
+        $photoUrl  = $photoPath
+            ? \Storage::disk('public')->url(ltrim($photoPath, '/'))
+            : null;
+
         $data = [
             'id' => $user->id,
             'full_name' => $user->full_name,
             'email' => $user->email,
             'phone' => $user->phone,
-            'profile_photo' => $user->profile_photo,
+            'profile_photo' => $photoUrl,
             'address' => $user->address,
             'role' => 'secretary',
             'center_id' => $secretary ? $secretary->center_id : null,
@@ -76,25 +82,44 @@ class SecretaryService
         if (!$request->hasFile('photo')) {
             return $this->unifiedResponse(false, 'No photo uploaded.', [], [], 400);
         }
-        
+
         $file = $request->file('photo');
         $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
-        if (!in_array($file->getMimeType(), $allowedTypes)) {
+        if (!$file->isValid() || !in_array($file->getMimeType(), $allowedTypes)) {
             return $this->unifiedResponse(false, 'Invalid file type. Only images are allowed.', [], [], 400);
         }
 
-        $path = $this->handleFileUpload($request, 'photo', 'profile_photos');
-        if ($path) {
+        $upload = $this->handleFileUpload($request, 'photo', 'profile_photos');
 
-            if ($user->profile_photo && Storage::disk('public')->exists($user->profile_photo)) {
-                Storage::disk('public')->delete($user->profile_photo);
-            }
-
-            $user->profile_photo = $path;
-            $user->save();
-            return $this->unifiedResponse(true, 'Profile photo updated successfully.', ['profile_photo' => $path]);
+        if (!$upload || empty($upload['path'])) {
+            return $this->unifiedResponse(false, 'Failed to upload photo.', [], [], 400);
         }
-        return $this->unifiedResponse(false, 'Failed to upload photo.', [], [], 400);
+
+        if ($user->profile_photo && Storage::disk('public')->exists($user->profile_photo)) {
+            Storage::disk('public')->delete($user->profile_photo);
+        }
+
+        $user->profile_photo = $upload['path'];
+        $user->save();
+
+        $url = $upload['url'] ?? asset('storage/' . ltrim($user->profile_photo, '/'));
+
+        return $this->unifiedResponse(true, 'Profile photo updated successfully.', [
+            'profile_photo'      => $url,
+        ]);
+
+        // $path = $this->handleFileUpload($request, 'photo', 'profile_photos');
+        // if ($path) {
+
+        //     if ($user->profile_photo && Storage::disk('public')->exists($user->profile_photo)) {
+        //         Storage::disk('public')->delete($user->profile_photo);
+        //     }
+
+        //     $user->profile_photo = $path;
+        //     $user->save();
+        //     return $this->unifiedResponse(true, 'Profile photo updated successfully.', ['profile_photo' => $path]);
+        // }
+        // return $this->unifiedResponse(false, 'Failed to upload photo.', [], [], 400);
     }
 }

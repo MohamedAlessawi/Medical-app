@@ -100,5 +100,10 @@ class DoctorController extends Controller
     {
         return $this->appointmentService->getTodaysAppointmentsForCenter();
     }
+
+    public function get_spec()
+    {
+        return $this->doctorService->getAllSpecialties();
+    }
 }
 

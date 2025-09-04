@@ -13,9 +13,22 @@ class InvitationRepository
 
     public function findPendingForDoctor(int $doctorUserId)
     {
-        return DoctorInvitation::where('doctor_user_id', $doctorUserId)
-                               ->where('status','pending')
-                               ->get();
+        {
+            return DoctorInvitation::query()
+                ->join('centers', 'doctor_invitations.center_id', '=', 'centers.id')
+                ->join('users as admins', 'doctor_invitations.invited_by', '=', 'admins.id')
+                ->where('doctor_invitations.doctor_user_id', $doctorUserId)
+                ->where('doctor_invitations.status', 'pending')
+                ->orderByDesc('doctor_invitations.created_at')
+                ->get([
+                    'doctor_invitations.*',
+                    'centers.name as center_name',
+                    'admins.full_name as invited_by_name',
+                ]);
+        }
+        // return DoctorInvitation::where('doctor_user_id', $doctorUserId)
+        //                        ->where('status','pending')
+        //                        ->get();
     }
 
     public function findMyPendingById(int $id, int $doctorUserId): DoctorInvitation
@@ -25,4 +38,27 @@ class InvitationRepository
                ->where('status','pending')
                ->firstOrFail();
     }
+
+    public function toggleForCenterAndDoctor(int $centerId, int $doctorUserId, int $invitedBy, ?string $message = null): array
+    {
+        $pending = \App\Models\DoctorInvitation::where('center_id', $centerId)
+            ->where('doctor_user_id', $doctorUserId)
+            ->where('status', 'pending');
+
+        if ($pending->exists()) {
+            $pending->update(['status' => 'expired']);
+            return ['mode' => 'canceled', 'invitation_status' => null];
+        }
+
+        $inv = \App\Models\DoctorInvitation::create([
+            'center_id'      => $centerId,
+            'doctor_user_id' => $doctorUserId,
+            'invited_by'     => $invitedBy,
+            'message'        => $message,
+            'status'         => 'pending',
+        ]);
+
+        return ['mode' => 'sent', 'invitation_status' => 'pending', 'invitation_id' => $inv->id];
+    }
+
 }

@@ -224,7 +224,10 @@ Route::middleware(['auth:sanctum', 'role:secretary'])->prefix('secretary')->grou
 
     Route::get('/dashboard-stats', [DoctorController::class, 'dashboardStats']);
     Route::get('/appointments/today', [DoctorController::class, 'todaysAppointmentsForCenter']);
+
     Route::post('/patients/{id}/upload-medical-file', [PatientController::class, 'uploadMedicalFile']);
+    Route::get('/patients/{id}/medical-file', [PatientController::class, 'listMedicalFiles']);
+    Route::delete('/patients/{patientId}/medical-file/{fileId}', [PatientController::class, 'deleteMedicalFile']);
 
 
     Route::get('/profile', [SecretaryProfileController::class, 'getProfile']);
@@ -257,8 +260,7 @@ Route::middleware(['auth:sanctum','role:admin'])->prefix('admin')->group(functio
     Route::post('/doctor-invitations', [DoctorManagementController::class, 'invite']);
     Route::put('/doctors/{doctorId}/status', [DoctorManagementController::class, 'toggle']);
     Route::delete('/doctors/{doctorId}', [DoctorManagementController::class, 'remove']);
-    Route::get('doctors/candidates', [DoctorManagementController::class, 'candidates']); 
-
+    Route::get('doctors/candidates', [DoctorManagementController::class, 'candidates']);
 
     Route::get('/doctors/{id}/working-hours', [DoctorController::class, 'getWorkingHours']);
     Route::post('/doctors/{id}/working-hours', [DoctorController::class, 'storeWorkingHour']);
@@ -269,6 +271,20 @@ Route::middleware(['auth:sanctum','role:admin'])->prefix('admin')->group(functio
     Route::get('/centers/services', [ServiceManagementController::class, 'index']);
     Route::post('/centers/services', [ServiceManagementController::class, 'store']);
     Route::delete('/centers/services/{id}', [ServiceManagementController::class, 'destroy']);
+
+    Route::get('/appointment-requests', [AppointmentRequestController::class, 'index']);
+
+     // Dashboard
+    Route::get('/dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index']);
+
+    // Reports
+    Route::get('/reports/appointments-trend', [\App\Http\Controllers\Admin\ReportController::class, 'appointmentsTrend']);
+    Route::get('/reports/top-doctors', [\App\Http\Controllers\Admin\ReportController::class, 'topDoctors']);
+    Route::get('/reports/new-patients', [\App\Http\Controllers\Admin\ReportController::class, 'newPatients']);
+
+    Route::get('/reports/center-detailed', [\App\Http\Controllers\Admin\ReportController::class, 'centerDetailed']);
+
+
 });
 
 Route::middleware(['auth:sanctum','role:doctor'])->prefix('doctor')->group(function () {
@@ -299,4 +315,5 @@ Route::get('/search/centers', [SearchController::class, 'searchCenters']);
 
 Route::post('/update_fcm_token', [PatientAppointmentController::class, 'updateFcmToken'])->middleware('auth:sanctum');
 
+Route::get('/specialties', [DoctorController::class, 'get_spec']);
 

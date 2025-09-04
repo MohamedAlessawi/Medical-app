@@ -21,11 +21,16 @@ class DoctorApprovalService
     $doctors = $this->doctorRepo->getPendingProfiles();
 
     $filtered = $doctors->map(function ($doctor) {
+
+        $certificateUrl = $doctor->certificate
+                ? asset('storage/' . ltrim($doctor->certificate, '/'))
+                : null;
+
         return [
             'doctor_profile' => [
                 'id' => $doctor->id,
                 'specialty_id' => $doctor->specialty_id,
-                'certificate' => $doctor->certificate,
+                'certificate' => $certificateUrl,
                 'status' => $doctor->status,
             ],
             'user' => [

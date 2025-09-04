@@ -254,6 +254,15 @@ class PatientAppointmentService
             return $this->unifiedResponse(false, 'Requested time is not available.', [], [], 409);
         }
     
+        $patientConflict = AppointmentRequest::where('patient_id', $patientId)
+            ->where('requested_date', $appointmentDateTime)
+            ->whereIn('status', ['pending', 'approved']) 
+            ->exists();
+    
+        if ($patientConflict) {
+            return $this->unifiedResponse(false, 'You already have an appointment at this time.', [], [], 409);
+        }
+    
         $conflictingConfirmed = AppointmentRequest::where('doctor_id', $doctor->id)
             ->where('requested_date', $appointmentDateTime)
             ->where('status', 'approved') 
@@ -268,7 +277,7 @@ class PatientAppointmentService
             'doctor_id' => $doctor->id,
             'center_id' => $doctor->center_id,
             'requested_date' => $appointmentDateTime,
-            'status' => 'pending', // يبقى قيد الانتظار
+            'status' => 'pending',
             'notes' => $validated['notes'] ?? null,
         ]);
     
