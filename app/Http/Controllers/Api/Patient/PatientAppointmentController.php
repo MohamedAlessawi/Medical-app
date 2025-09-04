@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Services\Patient\PatientAppointmentService;
 use App\Http\Requests\Patient\AppointmentRequestRequest;
 use Illuminate\Http\Request;
+use App\Traits\ApiResponseTrait;
+use Illuminate\Support\Facades\Auth;
+
 
 class PatientAppointmentController extends Controller
 {
@@ -92,4 +95,24 @@ class PatientAppointmentController extends Controller
      {
          return $this->appointmentService->cancelPendingAppointmentRequest($id);
      }
+
+
+
+     public function updateFcmToken(Request $request)
+    {
+        $request->validate([
+            'fcm_token' => 'required|string',
+        ]);
+
+        $user = Auth::user();
+        $user->fcm_token = $request->fcm_token;
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'FCM token updated successfully.',
+            'fcm_token' => $user->fcm_token,
+        ]);
+    }
+
 }

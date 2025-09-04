@@ -75,7 +75,7 @@ public function getDoctorAppointments(Request $request)
     return $this->unifiedResponse(true, 'Appointment details.', $appointment);
 }
 
-    public function getPastAppointments($request)
+public function getPastAppointments(Request $request)
 {
     $doctor = Auth::user()->doctor;
 
@@ -85,8 +85,8 @@ public function getDoctorAppointments(Request $request)
 
     $query = Appointment::with('user:id,full_name,email,phone')
         ->where('doctor_id', $doctor->id)
-        ->where('status', 'confirmed')
-        ->where('appointment_date', '<', now());
+        ->whereIn('attendance_status', ['present', 'absent']) 
+        ->whereDate('appointment_date', '<', now()->toDateString());
 
     if ($request->has('date')) {
         $query->whereDate('appointment_date', $request->query('date'));
@@ -131,32 +131,36 @@ public function getDoctorAppointments(Request $request)
 
     //     return $this->unifiedResponse(true, 'Attendance confirmed.', $appointment);
     // }
-  public function getPastVisitsForPatient($patientId)
-{
-    $doctor = Auth::user()->doctor;
-
-    if (!$doctor) {
-        return $this->unifiedResponse(false, 'You are not linked to a center as a doctor.', [], [], 403);
+    public function getPastVisitsForPatient($patientId)
+    {
+        $doctor = Auth::user()->doctor;
+    
+        if (!$doctor) {
+            return $this->unifiedResponse(false, 'You are not linked to a center as a doctor.', [], [], 403);
+        }
+    
+        $hasRelation = Appointment::where('doctor_id', $doctor->id)
+            ->where('booked_by', $patientId)
+            ->exists();
+    
+        if (!$hasRelation) {
+            return $this->unifiedResponse(false, 'You have no appointment history with this patient.', [], [], 403);
+        }
+    
+        $appointments = Appointment::with('user:id,full_name,email,phone')
+            ->where('doctor_id', $doctor->id)
+            ->where('booked_by', $patientId)
+            ->where('status', 'confirmed')
+            ->whereDate('appointment_date', '<', now()->toDateString())
+            ->orderByDesc('appointment_date')
+            ->get();
+    
+        return $this->unifiedResponse(true, 'Past visits for this patient fetched successfully.', $appointments);
     }
 
-    $hasRelation = Appointment::where('doctor_id', $doctor->id)
-        ->where('booked_by', $patientId)
-        ->exists();
 
-    if (!$hasRelation) {
-        return $this->unifiedResponse(false, 'You have no appointment history with this patient.', [], [], 403);
-    }
-
-    $appointments = Appointment::with('user:id,full_name,email,phone')
-        ->where('doctor_id', $doctor->id)
-        ->where('booked_by', $patientId)
-        ->where('status', 'confirmed')
-        ->where('appointment_date', '<', now())
-        ->orderByDesc('appointment_date')
-        ->get();
-
-    return $this->unifiedResponse(true, 'Past visits for this patient fetched successfully.', $appointments);
-}
+   
+    
 
 
 }

@@ -2,7 +2,7 @@
 
 namespace App\Services\Secretary;
 
-use App\Models\{Doctor, WorkingHour, User};
+use App\Models\{Doctor, WorkingHour, User , Specialty};
 use App\Traits\ApiResponseTrait;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -303,6 +303,14 @@ class DoctorService
             return ['error' => 'start_time must be before end_time'];
         }
         return null;
+    }
+
+
+    public function getAllSpecialties()
+    {
+        $specialties = Specialty::select('id', 'name')->orderBy('id')->get();
+
+        return $this->unifiedResponse(true, 'Specialties fetched successfully.', $specialties);
     }
 
 
