@@ -123,6 +123,9 @@ Route::get('centers/{centerId}/details', [PatientAppointmentController::class, '
 
         Route::patch('appointments/{id}/cancel', [PatientAppointmentController::class, 'cancelPendingAppointment']);
 
+        Route::get('/patient/past-appointments', [PatientAppointmentController::class, 'getPastAppointmentsForPatient']);
+
+
     /////////////////////////////////////////////////////////////////////
 
 

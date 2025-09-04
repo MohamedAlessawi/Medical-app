@@ -115,4 +115,9 @@ class PatientAppointmentController extends Controller
         ]);
     }
 
+    public function getPastAppointmentsForPatient()
+    {
+        return $this->appointmentService->getPastAppointmentsForPatient();
+    }
+
 }
