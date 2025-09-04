@@ -66,6 +66,7 @@ class AppointmentRequestService
         return $this->unifiedResponse(true, 'Appointment request details fetched successfully.', $request);
     }
 
+    
 
     public function approveRequest($id)
     {

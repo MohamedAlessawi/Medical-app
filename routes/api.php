@@ -297,4 +297,6 @@ Route::get('/search/centers', [SearchController::class, 'searchCenters']);
 ////////////////////////////////////////////////////////////////////
 
 
+Route::post('/update_fcm_token', [PatientAppointmentController::class, 'updateFcmToken'])->middleware('auth:sanctum');
+
 
