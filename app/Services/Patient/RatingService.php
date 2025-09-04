@@ -67,7 +67,7 @@ class RatingService
 
         $appointment = Appointment::with(['doctor.center'])
             ->where('id', $appointmentId)
-            ->where('status', 'confirmed')
+            ->where('status', 'approved')
             ->first();
 
         if (!$appointment) {
