@@ -83,9 +83,9 @@ public function getPastAppointments(Request $request)
         return $this->unifiedResponse(false, 'You are not linked to a center as a doctor.', [], [], 403);
     }
 
-    $query = Appointment::with('user:id,full_name,email,phone')
+    $query = Appointment::with(['patient:id,full_name,email,phone'])
         ->where('doctor_id', $doctor->id)
-        ->whereIn('attendance_status', ['present', 'absent']) 
+        ->whereIn('attendance_status', ['present', 'absent'])
         ->whereDate('appointment_date', '<', now()->toDateString());
 
     if ($request->has('date')) {
@@ -93,7 +93,7 @@ public function getPastAppointments(Request $request)
     }
 
     if ($request->has('patient_id')) {
-        $query->where('booked_by', $request->query('patient_id'));
+        $query->where('patient_id', $request->query('patient_id'));
     }
 
     $perPage = $request->query('per_page', 10);
@@ -102,6 +102,7 @@ public function getPastAppointments(Request $request)
 
     return $this->unifiedResponse(true, 'Past appointments fetched successfully.', $appointments);
 }
+
 
     // public function confirmAttendance($id, $data)
     // {
