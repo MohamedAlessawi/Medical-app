@@ -548,5 +548,18 @@ public function cancelPendingAppointmentRequest($id)
 }
 
 
+public function getPastAppointmentsForPatient()
+{
+    $patientId = Auth::id(); 
+
+    $appointments = Appointment::with(['doctor.user:id,full_name,email,phone'])
+        ->where('booked_by', $patientId)
+        ->where('status', 'confirmed')
+        ->where('appointment_date', '<', now())
+        ->orderByDesc('appointment_date')
+        ->get();
+
+    return $this->unifiedResponse(true, 'Past appointments fetched successfully.', $appointments);
+}
 
 }
