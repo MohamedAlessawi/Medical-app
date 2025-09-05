@@ -34,36 +34,36 @@ class AppointmentService
     {
         $secretary = auth()->user()->secretaries()->first();
         $centerId = $secretary->center_id;
-    
+
         $doctor = Doctor::find($data['doctor_id']);
-    
+
         if (!$doctor) {
             return $this->unifiedResponse(false, 'Doctor not found.', [], [], 404);
         }
-    
+
         $requestedDate = Carbon::parse($data['requested_date']);
         $dayOfWeek = $requestedDate->format('l');
         $workingHour = $doctor->workingHours()->where('day_of_week', $dayOfWeek)->first();
-    
+
         if (!$workingHour) {
             return $this->unifiedResponse(false, 'Doctor does not work on this day.', [], [], 422);
         }
-    
+
         $requestedTime = $requestedDate->format('H:i:s');
         if ($requestedTime < $workingHour->start_time || $requestedTime >= $workingHour->end_time) {
             return $this->unifiedResponse(false, 'Requested time is outside doctor\'s working hours.', [], [], 422);
         }
-    
+
         $exists = AppointmentRequest::where('doctor_id', $data['doctor_id'])
             ->whereDate('requested_date', $requestedDate->format('Y-m-d'))
             ->whereTime('requested_date', $requestedTime)
             ->whereIn('status', ['pending', 'approved'])
             ->exists();
-    
+
         if ($exists) {
             return $this->unifiedResponse(false, 'Appointment request already exists for this doctor at this time.', [], [], 409);
         }
-    
+
         $appointmentRequest = AppointmentRequest::create([
             'patient_id'     => $data['patient_id'],
             'doctor_id'      => $data['doctor_id'],
@@ -72,13 +72,13 @@ class AppointmentService
             'status'         => 'approved',
             'notes'          => $data['notes'] ?? null,
         ]);
-    
+
         return $this->unifiedResponse(true, 'Appointment request created successfully.', $appointmentRequest);
     }
-    
-    
+
+
     ////////////////////////////////////////////////////////////////////////////
-    
+
 
     public function updateAppointmentRequest($id, $data)
 {
@@ -137,7 +137,7 @@ class AppointmentService
     return $this->unifiedResponse(true, 'Appointment request updated successfully.', $appointmentRequest->fresh());
 }
 
-    
+
 
 public function deleteAppointmentRequest($id)
 {
@@ -145,7 +145,7 @@ public function deleteAppointmentRequest($id)
 
     $appointmentRequest = AppointmentRequest::where('id', $id)
         ->where('center_id', $centerId)
-        ->whereIn('status', ['pending', 'approved']) 
+        ->whereIn('status', ['pending', 'approved'])
         ->first();
 
     if (!$appointmentRequest) {
@@ -157,38 +157,47 @@ public function deleteAppointmentRequest($id)
     return $this->unifiedResponse(true, 'Appointment request deleted (marked as rejected) successfully.');
 }
 
-public function confirmAttendance($id, $status)
-{
-    $allowed = ['present', 'absent'];
-    if (!in_array($status, $allowed)) {
-        return $this->unifiedResponse(false, 'Invalid attendance status. Allowed values: present, absent.', [], [], 422);
+    public function confirmAttendance($id, $status)
+    {
+        $allowed = ['present', 'absent'];
+        if (!in_array($status, $allowed)) {
+            return $this->unifiedResponse(false, 'Invalid attendance status. Allowed values: present, absent.', [], [], 422);
+        }
+
+        $centerId = auth()->user()->secretaries->first()->center_id;
+
+        $appointmentRequest = AppointmentRequest::where('id', $id)
+            ->where('center_id', $centerId)
+            ->where('status', 'approved')
+            ->first();
+
+        if (!$appointmentRequest) {
+            return $this->unifiedResponse(false, 'Appointment request not found or not approved.', [], [], 404);
+        }
+
+        $dt = $appointmentRequest->requested_date instanceof \Carbon\Carbon
+            ? $appointmentRequest->requested_date
+            : \Carbon\Carbon::parse($appointmentRequest->requested_date);
+
+        $appointmentDate = $dt->toDateString();
+        $appointmentTime = $dt->format('H:i:s');
+
+        $appointment = Appointment::create([
+            'doctor_id'         => $appointmentRequest->doctor_id,
+            'patient_id'        => $appointmentRequest->patient_id,
+            // 'appointment_date'  => $appointmentRequest->requested_date->format('Y-m-d'),
+            'appointment_date'  => $appointmentDate,
+            'appointment_time'  => $appointmentTime,
+            'status'            => 'approved',
+            'booked_by'         => auth()->id(),
+            'attendance_status' => $status,
+            'notes'             => $appointmentRequest->notes,
+        ]);
+
+        $appointmentRequest->delete();
+
+        return $this->unifiedResponse(true, 'Attendance confirmed and appointment created successfully.', $appointment);
     }
-
-    $centerId = auth()->user()->secretaries->first()->center_id;
-
-    $appointmentRequest = AppointmentRequest::where('id', $id)
-        ->where('center_id', $centerId)
-        ->where('status', 'approved')
-        ->first();
-
-    if (!$appointmentRequest) {
-        return $this->unifiedResponse(false, 'Appointment request not found or not approved.', [], [], 404);
-    }
-
-    $appointment = Appointment::create([
-        'doctor_id'         => $appointmentRequest->doctor_id,
-        'patient_id'        => $appointmentRequest->patient_id, 
-        'appointment_date'  => $appointmentRequest->requested_date->format('Y-m-d'),
-        'status'            => 'approved', 
-        'booked_by'         => null, 
-        'attendance_status' => $status,
-        'notes'             => $appointmentRequest->notes,
-    ]);
-
-    $appointmentRequest->delete();
-
-    return $this->unifiedResponse(true, 'Attendance confirmed and appointment created successfully.', $appointment);
-}
 
 
 

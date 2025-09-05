@@ -109,17 +109,5 @@ class SecretaryService
             'profile_photo'      => $url,
         ]);
 
-        // $path = $this->handleFileUpload($request, 'photo', 'profile_photos');
-        // if ($path) {
-
-        //     if ($user->profile_photo && Storage::disk('public')->exists($user->profile_photo)) {
-        //         Storage::disk('public')->delete($user->profile_photo);
-        //     }
-
-        //     $user->profile_photo = $path;
-        //     $user->save();
-        //     return $this->unifiedResponse(true, 'Profile photo updated successfully.', ['profile_photo' => $path]);
-        // }
-        // return $this->unifiedResponse(false, 'Failed to upload photo.', [], [], 400);
     }
 }

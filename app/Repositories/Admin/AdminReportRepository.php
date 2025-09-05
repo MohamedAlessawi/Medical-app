@@ -31,7 +31,7 @@ class AdminReportRepository
             $completed = DB::table('appointments as a')
                 ->join('doctors as d', 'a.doctor_id', '=', 'd.id')
                 ->where('d.center_id', $centerId)
-                ->where('a.status', 'completed')
+                ->where('a.attendance_status', 'present')
                 ->whereDate('a.appointment_date', $day->toDateString())
                 ->count();
 
@@ -99,7 +99,7 @@ class AdminReportRepository
         $completedCount = \DB::table('appointments as a')
             ->join('doctors as d', 'a.doctor_id', '=', 'd.id')
             ->where('d.center_id', $centerId)
-            ->where('a.status', 'completed')
+            ->where('a.attendance_status', 'present')
             ->whereBetween('a.appointment_date', [$from->toDateString(), $to->toDateString()])
             ->count();
 

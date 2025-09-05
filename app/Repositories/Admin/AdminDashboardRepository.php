@@ -22,7 +22,7 @@ class AdminDashboardRepository
         $q = DB::table('appointments as a')
             ->join('doctors as d', 'a.doctor_id', '=', 'd.id')
             ->where('d.center_id', $centerId)
-            ->where('a.status', 'completed');
+            ->where('a.attendance_status', 'present');
 
         if ($onDate) {
             $q->whereDate('a.appointment_date', $onDate->toDateString());

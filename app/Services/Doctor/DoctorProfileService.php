@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Validator;
 use App\Traits\FileUploadTrait;
 use App\Traits\ApiResponseTrait;
 use App\Models\User;
+use Illuminate\Support\Facades\Storage;
+
 
 class DoctorProfileService
 {
@@ -102,12 +104,20 @@ public function show()
         return $this->unifiedResponse(false, 'Doctor profile not found');
     }
 
+    $profilePhotoUrl = $user->profile_photo
+        ? Storage::disk('public')->url(ltrim($user->profile_photo, '/'))
+        : null;
+
+    $certificateUrl = $profile->certificate
+        ? asset('storage/' . ltrim($profile->certificate, '/'))
+        : null;
+
     return $this->unifiedResponse(true, 'Doctor profile fetched successfully', [
         'doctor_profile' => [
             'about_me' => $profile->about_me,
             'years_of_experience' => $profile->years_of_experience,
             'specialty_id' => $profile->specialty_id,
-            'certificate' => $profile->certificate,
+            'certificate' => $certificateUrl,
             'appointment_duration' => $profile->appointment_duration,
             'status' => $profile->status,
         ],
@@ -116,7 +126,7 @@ public function show()
             'full_name' => $user->full_name,
             'email' => $user->email,
             'phone' => $user->phone,
-            'profile_photo' => $user->profile_photo,
+            'profile_photo' => $profilePhotoUrl,
             'birthdate' => $user->birthdate,
             'gender' => $user->gender,
             'address' => $user->address,
