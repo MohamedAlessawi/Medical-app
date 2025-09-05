@@ -96,7 +96,7 @@ class PatientAppointmentService
 
     public function getAvailableSlots($doctorId, $centerId, Request $request)
     {
-        
+
         $date = $request->get('date', Carbon::tomorrow()->format('Y-m-d'));
         $selectedDate = Carbon::parse($date);
 
@@ -210,68 +210,68 @@ class PatientAppointmentService
     {
         $validated = $request->validated();
         $patientId = $request->user()->id;
-    
+
         $doctor = Doctor::where('id', $validated['doctor_id'])
             ->where('center_id', $validated['center_id'])
             ->first();
-    
+
         if (!$doctor) {
             return $this->unifiedResponse(false, 'Doctor not found in this center.', [], [], 404);
         }
-    
+
         $appointmentDateTime = Carbon::parse($validated['requested_date'] . ' ' . $validated['requested_time']);
-    
+
         if ($appointmentDateTime->isPast()) {
             return $this->unifiedResponse(false, 'Cannot book in the past.', [], [], 422);
         }
-    
+
         $dayOfWeek = $appointmentDateTime->format('l');
-    
+
         $workingHour = WorkingHour::where('doctor_id', $doctor->id)
             ->where('day_of_week', $dayOfWeek)
             ->first();
-    
+
         if (!$workingHour) {
             return $this->unifiedResponse(false, 'Doctor does not work on this day.', [], [], 422);
         }
-    
+
         $requestedTime = Carbon::parse($validated['requested_time']);
         $startTime = Carbon::parse($workingHour->start_time);
         $endTime = Carbon::parse($workingHour->end_time);
-    
+
         if ($requestedTime->lt($startTime) || $requestedTime->gte($endTime)) {
             return $this->unifiedResponse(false, 'Requested time is outside doctor\'s working hours.', [], [], 422);
         }
-    
+
         $availableSlots = $this->calculateAvailableSlots(
             $doctor->id,
             $doctor->center_id,
             $appointmentDateTime->toDateString(),
             $workingHour
         );
-    
+
         if (!in_array($requestedTime->format('H:i'), $availableSlots)) {
             return $this->unifiedResponse(false, 'Requested time is not available.', [], [], 409);
         }
-    
+
         $patientConflict = AppointmentRequest::where('patient_id', $patientId)
             ->where('requested_date', $appointmentDateTime)
-            ->whereIn('status', ['pending', 'approved']) 
+            ->whereIn('status', ['pending', 'approved'])
             ->exists();
-    
+
         if ($patientConflict) {
             return $this->unifiedResponse(false, 'You already have an appointment at this time.', [], [], 409);
         }
-    
+
         $conflictingConfirmed = AppointmentRequest::where('doctor_id', $doctor->id)
             ->where('requested_date', $appointmentDateTime)
-            ->where('status', 'approved') 
+            ->where('status', 'approved')
             ->exists();
-    
+
         if ($conflictingConfirmed) {
             return $this->unifiedResponse(false, 'This time slot is already booked.', [], [], 409);
         }
-    
+
         $appointmentRequest = AppointmentRequest::create([
             'patient_id' => $patientId,
             'doctor_id' => $doctor->id,
@@ -280,10 +280,10 @@ class PatientAppointmentService
             'status' => 'pending',
             'notes' => $validated['notes'] ?? null,
         ]);
-    
+
         return $this->unifiedResponse(true, 'Appointment request submitted successfully.', $appointmentRequest);
     }
-    
+
 
 
 
@@ -477,7 +477,7 @@ public function getCentersAndDoctorsBySpecialty($specialtyId)
     $specialty = Specialty::with([
         'doctors.center',
         'doctors.user.doctorProfile',
-        'doctors.workingHours' 
+        'doctors.workingHours'
     ])->find($specialtyId);
 
     if (!$specialty) {
@@ -525,9 +525,9 @@ public function cancelPendingAppointmentRequest($id)
     $user = Auth::user();
 
     $appointmentRequest = AppointmentRequest::where('id', $id)
-        ->where('patient_id', $user->id) 
-        ->where('status', 'pending') 
-        ->whereDate('requested_date', '>', Carbon::tomorrow()) 
+        ->where('patient_id', $user->id)
+        ->where('status', 'pending')
+        ->whereDate('requested_date', '>', Carbon::tomorrow())
         ->first();
 
     if (!$appointmentRequest) {
@@ -548,18 +548,45 @@ public function cancelPendingAppointmentRequest($id)
 }
 
 
-public function getPastAppointmentsForPatient()
-{
-    $patientId = Auth::id(); 
+    public function getPastAppointmentsForPatient()
+    {
+        $patientId =Auth::id();
 
-    $appointments = Appointment::with(['doctor.user:id,full_name,email,phone'])
-        ->where('booked_by', $patientId)
-        ->where('status', 'confirmed')
-        ->where('appointment_date', '<', now())
-        ->orderByDesc('appointment_date')
-        ->get();
+        $today    = Carbon::today()->toDateString();
+        $nowTime  = Carbon::now()->format('H:i:s');
 
-    return $this->unifiedResponse(true, 'Past appointments fetched successfully.', $appointments);
-}
+        $appointments = Appointment::with([
+                'doctor.user:id,full_name',
+                'doctor.center:id,name',
+            ])
+            ->where('patient_id', $patientId)
+            ->notDeleted()
+            // ->where(function ($q) use ($today, $nowTime) {
+            //     $q->whereDate('appointment_date', '<', $today)
+            //     ->orWhere(function ($q2) use ($today, $nowTime) {
+            //         $q2->whereDate('appointment_date', '=', $today)
+            //             ->where('appointment_time', '<', $nowTime);
+            //     });
+            // })
+            ->orderByDesc('appointment_date')
+            ->orderByDesc('appointment_time')
+            ->get()
+            ->map(function ($a) {
+                return [
+                    'id'                 => $a->id,
+                    'appointment_date'   => $a->appointment_date ? \Carbon\Carbon::parse($a->appointment_date)->toDateString() : null,
+                    'appointment_time'   => $a->appointment_time,
+                    'status'             => $a->status,
+                    'attendance_status'  => $a->attendance_status,
+
+                    'doctor_id'          => $a->doctor->id ?? null,
+                    'doctor_name'        => $a->doctor->user->full_name ?? null,
+                    'center_id'          => $a->doctor->center->id ?? null,
+                    'center_name'        => $a->doctor->center->name ?? null,
+                ];
+            });
+
+        return $this->unifiedResponse(true, 'Past appointments fetched successfully.', $appointments);
+    }
 
 }

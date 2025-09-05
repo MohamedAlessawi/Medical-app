@@ -18,16 +18,74 @@ class AppointmentService
 
     public function getDoctorAppointments($doctorId)
     {
-        $today = Carbon::today();
-        $appointments = Appointment::where('doctor_id', $doctorId)
-            ->whereDate('appointment_date', '>=', $today)
-            ->where('status', '!=', 'deleted')
-            ->orderBy('appointment_date')
-            ->with(['user:id,full_name,email,phone'])
-            ->get();
+        $today = Carbon::today()->toDateString();
 
-        return $this->unifiedResponse(true, 'Current appointments fetched successfully.', $appointments);
+        $appointments = \App\Models\Appointment::where('doctor_id', $doctorId)
+            ->whereDate('appointment_date', $today)
+            ->whereIn('attendance_status', ['present', 'absent'])
+            ->where('status', '!=', 'deleted')
+            ->with([
+                'patient:id,full_name,phone',
+                'user:id,full_name,phone'
+            ])
+            ->orderBy('appointment_time')
+            ->get()
+            ->map(function ($a) {
+                $patientName  = $a->patient->full_name ?? $a->user->full_name ?? null;
+                $patientPhone = $a->patient->phone      ?? $a->user->phone      ?? null;
+
+                return [
+                    'id'                 => $a->id,
+                    'patient_id'         => $a->patient_id,
+                    'patient_name'       => $patientName,
+                    'patient_phone'      => $patientPhone,
+                    'appointment_date'   => $a->appointment_date ? \Carbon\Carbon::parse($a->appointment_date)->toDateString() : null,
+                    'appointment_time'   => $a->appointment_time ?? null,
+                    'attendance_status'  => $a->attendance_status,
+                    'status'             => $a->status,
+                    'notes'              => $a->notes,
+                ];
+            });
+
+        $approvedRequests = \App\Models\AppointmentRequest::where('doctor_id', $doctorId)
+            ->whereDate('requested_date', $today)
+            ->where('status', 'approved')
+            ->with([
+                'patient:id,full_name,phone'
+            ])
+            ->orderBy('requested_date')
+            ->get()
+            ->map(function ($r) {
+                return [
+                    'id'            => $r->id,
+                    'patient_id'    => $r->patient_id,
+                    'patient_name'  => $r->patient->full_name ?? null,
+                    'patient_phone' => $r->patient->phone ?? null,
+                    'requested_time'=> $r->requested_date ? Carbon::parse($r->requested_date)->format('H:i') : null,
+                    'status'        => $r->status,
+                    'notes'         => $r->notes,
+                ];
+            });
+
+        return $this->unifiedResponse(true, 'Doctor appointments & approved requests for today fetched.', [
+            'appointments_today'        => $appointments,
+            'approved_requests_today'   => $approvedRequests,
+        ]);
     }
+
+
+    // public function getDoctorAppointments($doctorId)
+    // {
+    //     $today = Carbon::today();
+    //     $appointments = Appointment::where('doctor_id', $doctorId)
+    //         ->whereDate('appointment_date', '>=', $today)
+    //         ->where('status', '!=', 'deleted')
+    //         ->orderBy('appointment_date')
+    //         ->with(['user:id,full_name,email,phone'])
+    //         ->get();
+
+    //     return $this->unifiedResponse(true, 'Current appointments fetched successfully.', $appointments);
+    // }
 
     ///////////////////////////////////////////////////////////////////
     public function createAppointmentRequest($data)
