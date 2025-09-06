@@ -4,6 +4,7 @@ namespace App\Services\SuperAdmin;
 
 use App\Repositories\Doctor\DoctorProfileRepository;
 use App\Traits\ApiResponseTrait;
+use Illuminate\Support\Facades\Mail;
 
 class DoctorApprovalService
 {
@@ -43,17 +44,61 @@ class DoctorApprovalService
     }
 
 
+    // public function approve($id)
+    // {
+    //     $profile = $this->doctorRepo->updateStatus($id, 'approved');
+    //     return $this->unifiedResponse(true, 'Doctor approved', $profile);
+    // }
+
+    // public function reject($id)
+    // {
+    //     $profile = $this->doctorRepo->updateStatus($id, 'rejected');
+    //     return $this->unifiedResponse(true, 'Doctor rejected', $profile);
+    // }
+
+
     public function approve($id)
     {
         $profile = $this->doctorRepo->updateStatus($id, 'approved');
+
+        // إرسال الإيميل للدكتور عند القبول
+        if ($profile && $profile->user?->email) {
+            $email = $profile->user->email;
+            $name  = $profile->user->full_name;
+
+            Mail::raw(
+                "Hello {$name},\n\nYour doctor account has been approved. You can now log in to the system.\n\nBest regards,\nMedical Booking System",
+                function ($message) use ($email) {
+                    $message->to($email)
+                        ->subject('Doctor Account Approved');
+                }
+            );
+        }
+
         return $this->unifiedResponse(true, 'Doctor approved', $profile);
     }
 
     public function reject($id)
     {
         $profile = $this->doctorRepo->updateStatus($id, 'rejected');
+
+        // إرسال الإيميل للدكتور عند الرفض
+        if ($profile && $profile->user?->email) {
+            $email = $profile->user->email;
+            $name  = $profile->user->full_name;
+
+            Mail::raw(
+                "Hello {$name},\n\nWe are sorry to inform you that your doctor account request has been rejected.\n\nBest regards,\nMedical Booking System",
+                function ($message) use ($email) {
+                    $message->to($email)
+                        ->subject('Doctor Account Rejected');
+                }
+            );
+        }
+
         return $this->unifiedResponse(true, 'Doctor rejected', $profile);
     }
+
 
     public function listAllDoctors()
     {

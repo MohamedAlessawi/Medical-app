@@ -80,9 +80,9 @@ class PatientService
                 'status'    => $data['status'] ?? "Active",
             ]);
 
-            // Mail::raw("Your account has been created. Email: {$user->email}, Password: {$password}", function ($message) use ($user) {
-            //     $message->to($user->email)->subject('New Patient Account Created');
-            // });
+            Mail::raw("Your account has been created. Email: {$user->email}, Password: {$password}", function ($message) use ($user) {
+                $message->to($user->email)->subject('New Patient Account Created');
+            });
 
             DB::commit();
 

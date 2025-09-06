@@ -110,15 +110,15 @@ class AdminUserService
             }
 
             // Send email with credentials
-            // Mail::send('emails.new_user', [
-            //     'email' => $user->email,
-            //     'password' => $password,
-            //     'verify_email' => $request->verify_email,
-            //     'code' => $code
-            // ], function($message) use ($user) {
-            //     $message->to($user->email);
-            //     $message->subject('Your New Account Credentials');
-            // });
+            Mail::send('emails.new_user', [
+                'email' => $user->email,
+                'password' => $password,
+                'verify_email' => $request->verify_email,
+                'code' => $code
+            ], function($message) use ($user) {
+                $message->to($user->email);
+                $message->subject('Your New Account Credentials');
+            });
 
             $message = $request->verify_email ? 'User created and email verified.' : 'User created, verification code sent.';
             return $this->unifiedResponse(true, $message, ['user_id' => $user->id], [], 201);

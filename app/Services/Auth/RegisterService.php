@@ -51,10 +51,10 @@ class RegisterService
             UserVerify::create(['user_id' => $user->id, 'token' => $code]);
             Cache::put($request->ip(), [$code, $request->email], now()->addMinutes(3));
 
-            // Mail::send('emails.verifyEmail', ['token' => $code], function($message) use ($request) {
-            //     $message->to($request->email);
-            //     $message->subject('Email Verification Code');
-            // });
+            Mail::send('emails.verifyEmail', ['token' => $code], function($message) use ($request) {
+                $message->to($request->email);
+                $message->subject('Email Verification Code');
+            });
 
             return $this->unifiedResponse(true, 'Registration successful, please check your email for verification code.', ['user_id' => $user->id,'profile_photo'   => $user->profile_photo,           // path المخزون
             'profile_photo_url' => $upload['url'] ?? ($user->profile_photo ? asset('storage/'.$user->profile_photo) : null),], [], 201);
@@ -116,10 +116,10 @@ class RegisterService
 
         Cache::put($request->ip(), [$code, $validated['email']], now()->addMinutes(3));
 
-        // Mail::send('emails.verifyEmail', ['token' => $code], function ($message) use ($validated) {
-        //     $message->to($validated['email']);
-        //     $message->subject('Email Verification Code');
-        // });
+        Mail::send('emails.verifyEmail', ['token' => $code], function ($message) use ($validated) {
+            $message->to($validated['email']);
+            $message->subject('Email Verification Code');
+        });
 
         return $this->unifiedResponse(true, 'Registration successful. Please check your email for verification code.', [
             'user_id' => $user->id,
@@ -128,7 +128,7 @@ class RegisterService
     } catch (\Exception $e) {
     return $this->unifiedResponse(false, 'Registration failed.', [], [
         'exception' => $e->getMessage(),
-        'trace' => $e->getTraceAsString(), // 👈 مؤقتًا بس للتصحيح
+        'trace' => $e->getTraceAsString(),
     ], 500);
 }
 
