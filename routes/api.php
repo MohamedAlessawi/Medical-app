@@ -84,7 +84,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 //patient
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware('auth:sanctum', 'role:patient')->group(function () {
     Route::get('/patient/profile', [PatientProfileController::class, 'show']);
     Route::put('/patient/profile', [PatientProfileController::class, 'update']);
     Route::put('/patient/profile/medical', [PatientProfileController::class, 'updateMedical']);
