@@ -10,32 +10,55 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use App\Models\Notification;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class PatientAppointmentService
 {
     use ApiResponseTrait;
 
+
     public function getCenters(Request $request)
-    {
-        $query = Center::where('is_active', true);
+{
+    // نجيب عدد الأطباء مع كل مركز
+    $query = Center::where('is_active', true)->withCount('doctors');
 
-        if ($request->has('search')) {
-            $query->where('name', 'like', '%' . $request->search . '%');
-        }
-
-        $centers = $query->get()
-            ->map(function ($center) {
-                return [
-                    'id' => $center->id,
-                    'name' => $center->name,
-                    'address' => $center->location,
-                    'phone' => $center->phone ?? null,
-                    'doctors_count' => $center->doctors_count,
-                ];
-            });
-
-        return $this->unifiedResponse(true, 'Centers fetched successfully.', $centers);
+    if ($request->filled('search')) {
+        $query->where('name', 'like', '%' . $request->search . '%');
     }
+
+    $centers = $query->get();
+    $centerIds = $centers->pluck('id');
+
+    // تجميعة واحدة لمتوسط التقييم لكل مركز (0..5)
+    $ratings = DB::table('ratings')
+        ->select('rateable_id', DB::raw('ROUND(AVG(score), 1) as avg_score'))
+        ->where('rateable_type', \App\Models\Center::class)
+        ->whereIn('rateable_id', $centerIds)
+        ->groupBy('rateable_id')
+        ->get()
+        ->keyBy('rateable_id');
+
+    $data = $centers->map(function ($center) use ($ratings) {
+        $imageUrl = $center->image
+            ? Storage::disk('public')->url(ltrim($center->image, '/'))
+            : null;
+
+        $avg = optional($ratings->get($center->id))->avg_score ?? 0.0;
+
+        return [
+            'id'             => $center->id,
+            'name'           => $center->name,
+            // عندك مرات address ومرات location — خليه يلتقط الموجود
+            'address'        => $center->location ?? $center->address ?? null,
+            'phone'          => $center->phone ?? null,
+            'doctors_count'  => $center->doctors_count,
+            'image_url'      => $imageUrl,
+            'rating_average' => (float) $avg, // 0..5
+        ];
+    });
+
+    return $this->unifiedResponse(true, 'Centers fetched successfully.', $data);
+}
 
     public function getSpecialties(Request $request)
     {
@@ -88,7 +111,7 @@ class PatientAppointmentService
                 return [
                     'center_id' => $doctorCenter->center_id,
                     'center_name' => $doctorCenter->center->name,
-                    'center_address' => $doctorCenter->center->address,
+                    'center_address' => $doctorCenter->center->location,
                     'working_days' => $doctorCenter->workingHours->pluck('day_of_week'),
                 ];
             });

@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Exception;
@@ -43,6 +44,8 @@ class AdminUserService
             //     return $this->unifiedResponse(false, 'Validation failed.', [], $validator->errors()->toArray(), 422);
             // }
 
+            $centerId = Auth::user()->adminCenters->first()->center_id;
+
             $data = $request->validated();
             $user = $this->userRepository->findByEmailOrPhone($request->email ?? $request->phone);
 
@@ -53,7 +56,7 @@ class AdminUserService
                 if ($data['role'] === 'secretary') {
                     Secretary::firstOrCreate([
                         'user_id' => $user->id,
-                        'center_id' => $data['center_id'],
+                        'center_id' => $centerId,
                     ]);
                 }
                 if ($data['role'] === 'doctor') {
@@ -87,7 +90,7 @@ class AdminUserService
             if ($data['role'] === 'secretary') {
                 Secretary::create([
                     'user_id' => $user->id,
-                    'center_id' => $data['center_id'],
+                    'center_id' => $centerId,
                 ]);
             }
             if ($data['role'] === 'doctor') {

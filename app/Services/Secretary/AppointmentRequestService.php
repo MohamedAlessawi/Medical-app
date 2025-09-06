@@ -30,6 +30,7 @@ class AppointmentRequestService
 
         $query = AppointmentRequest::where('center_id', $centerId)
             ->where('status', '!=', 'deleted')
+            ->whereDate('requested_date', '>=', now()->toDateString())
             ->with(['patient', 'doctor.user.doctorProfile.specialty', 'center']);
 
         if ($request->has('status')) {

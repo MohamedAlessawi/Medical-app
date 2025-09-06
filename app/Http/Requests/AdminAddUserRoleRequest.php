@@ -27,7 +27,7 @@ class AdminAddUserRoleRequest extends FormRequest
             'phone' => 'required|string|max:15',
             'role' => 'required|exists:roles,name',
             'verify_email' => 'nullable|boolean',
-            'center_id' => 'required|exists:centers,id',
+            // 'center_id' => 'required|exists:centers,id',
         ];
     }
 }
