@@ -99,25 +99,47 @@ class PatientAppointmentService
     public function getDoctorCenters($doctorId)
     {
         $doctor = Doctor::find($doctorId);
-
+    
         if (!$doctor) {
             return $this->unifiedResponse(false, 'Doctor not found.', [], [], 404);
         }
-
+    
         $centers = Doctor::where('user_id', $doctor->user_id)
             ->with(['center', 'workingHours'])
+            ->get();
+    
+        $centerIds = $centers->pluck('center_id');
+    
+        $ratings = DB::table('ratings')
+            ->select('rateable_id', DB::raw('ROUND(AVG(score), 1) as avg_score'))
+            ->where('rateable_type', \App\Models\Center::class)
+            ->whereIn('rateable_id', $centerIds)
+            ->groupBy('rateable_id')
             ->get()
-            ->map(function ($doctorCenter) {
-                return [
-                    'center_id' => $doctorCenter->center_id,
-                    'center_name' => $doctorCenter->center->name,
-                    'center_address' => $doctorCenter->center->location,
-                    'working_days' => $doctorCenter->workingHours->pluck('day_of_week'),
-                ];
-            });
-
-        return $this->unifiedResponse(true, 'Doctor centers fetched successfully.', $centers);
+            ->keyBy('rateable_id');
+    
+        $data = $centers->map(function ($doctorCenter) use ($ratings) {
+            $center = $doctorCenter->center;
+    
+            $imageUrl = $center->image
+                ? Storage::disk('public')->url(ltrim($center->image, '/'))
+                : null;
+    
+            $avg = optional($ratings->get($center->id))->avg_score ?? 0.0;
+    
+            return [
+                'center_id'       => $center->id,
+                'center_name'     => $center->name,
+                'center_address'  => $center->location ?? $center->address ?? null,
+                'working_days'    => $doctorCenter->workingHours->pluck('day_of_week'),
+                'image_url'       => $imageUrl,
+                'rating_average'  => (float) $avg,
+            ];
+        });
+    
+        return $this->unifiedResponse(true, 'Doctor centers fetched successfully.', $data);
     }
+    
 
     public function getAvailableSlots($doctorId, $centerId, Request $request)
     {
@@ -464,6 +486,11 @@ public function getCenterDetails($centerId)
         return $this->unifiedResponse(false, 'Center not found.', [], [], 404);
     }
 
+    $avgRating = DB::table('ratings')
+        ->where('rateable_type', \App\Models\Center::class)
+        ->where('rateable_id', $center->id)
+        ->avg('score');
+
     $specialties = $center->doctors
         ->groupBy(function ($doctor) {
             return $doctor->specialty ? $doctor->specialty->id : null;
@@ -496,16 +523,23 @@ public function getCenterDetails($centerId)
             ];
         })->values();
 
+    $imageUrl = $center->image
+        ? Storage::disk('public')->url(ltrim($center->image, '/'))
+        : null;
+
     $data = [
         'id' => $center->id,
         'name' => $center->name,
         'address' => $center->location,
         'phone' => $center->phone,
+        'image_url' => $imageUrl,
+        'rating_average' => round($avgRating, 1) ?? 0.0,
         'specialties' => $specialties,
     ];
 
     return $this->unifiedResponse(true, 'Center details fetched successfully.', $data);
 }
+
 
 
 
@@ -569,6 +603,14 @@ public function getDoctorProfile($doctorId)
         return $this->unifiedResponse(false, 'Doctor not found.', [], [], 404);
     }
 
+    $profilePhotoUrl = $doctor->user->profile_photo
+        ? Storage::disk('public')->url(ltrim($doctor->user->profile_photo, '/'))
+        : null;
+
+    $certificateUrl = $doctor->doctorProfile->certificate
+        ? asset('storage/' . ltrim($doctor->doctorProfile->certificate, '/'))
+        : null;
+
     $centers = Doctor::where('user_id', $doctor->user_id)
         ->with(['center', 'workingHours'])
         ->get()
@@ -593,12 +635,14 @@ public function getDoctorProfile($doctorId)
         'specialty' => $doctor->doctorProfile->specialty->name ?? null,
         'experience' => $doctor->years_of_experience,
         'about' => $doctor->doctorProfile->about_me,
-        'certificate' => $doctor->doctorProfile->certificate,
+        'certificate' => $certificateUrl,
+        'profile_photo' => $profilePhotoUrl,
         'centers' => $centers,
     ];
 
     return $this->unifiedResponse(true, 'Doctor profile fetched successfully.', $data);
 }
+
 
 ////////////////////////////////////////////////////////////////////////
 
@@ -615,21 +659,44 @@ public function getCentersAndDoctorsBySpecialty($specialtyId)
         return $this->unifiedResponse(false, 'Specialty not found.', [], [], 404);
     }
 
+    $centerIds = $specialty->doctors->pluck('center_id')->unique();
+
+    $ratings = DB::table('ratings')
+        ->select('rateable_id', DB::raw('ROUND(AVG(score), 1) as avg_score'))
+        ->where('rateable_type', \App\Models\Center::class)
+        ->whereIn('rateable_id', $centerIds)
+        ->groupBy('rateable_id')
+        ->get()
+        ->keyBy('rateable_id');
+
     $centers = $specialty->doctors
         ->groupBy('center_id')
-        ->map(function ($doctors, $centerId) {
+        ->map(function ($doctors, $centerId) use ($ratings) {
             $center = $doctors->first()->center;
+            $centerImage = $center->image
+                ? Storage::disk('public')->url(ltrim($center->image, '/'))
+                : null;
+
+            $avgRating = optional($ratings->get($center->id))->avg_score ?? 0.0;
+
             return [
-                'center_id' => $center->id,
-                'center_name' => $center->name,
-                'center_address' => $center->location,
-                'doctors' => $doctors->map(function ($doctor) {
+                'center_id'       => $center->id,
+                'center_name'     => $center->name,
+                'center_address'  => $center->location,
+                'center_image'    => $centerImage,
+                'rating_average'  => (float) $avgRating,
+                'doctors'         => $doctors->map(function ($doctor) {
+                    $profilePhoto = $doctor->user->profile_photo
+                        ? Storage::disk('public')->url(ltrim($doctor->user->profile_photo, '/'))
+                        : null;
+
                     return [
-                        'doctor_id'   => $doctor->id,
-                        'doctor_name' => $doctor->user->full_name,
-                        'experience'  => $doctor->experience,
-                        'about'       => $doctor->about_me,
-                        'working_hours' => $doctor->workingHours->map(function ($wh) {
+                        'doctor_id'        => $doctor->id,
+                        'doctor_name'      => $doctor->user->full_name,
+                        'doctor_profile_photo' => $profilePhoto,
+                        'experience'       => $doctor->experience,
+                        'about'            => $doctor->about_me,
+                        'working_hours'    => $doctor->workingHours->map(function ($wh) {
                             return [
                                 'day_of_week' => $wh->day_of_week,
                                 'start_time'  => $wh->start_time,
@@ -650,6 +717,7 @@ public function getCentersAndDoctorsBySpecialty($specialtyId)
 
     return $this->unifiedResponse(true, 'Centers and doctors fetched successfully.', $data);
 }
+
 
 
     public function cancelPendingAppointmentRequest($id)
