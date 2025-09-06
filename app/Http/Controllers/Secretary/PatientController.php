@@ -9,16 +9,20 @@ use App\Http\Requests\Secretary\UpdatePatientProfileRequest;
 use App\Services\Secretary\PatientService;
 use App\Services\Secretary\MedicalFileService;
 use Illuminate\Http\Request;
+use App\Services\Secretary\AppointmentService;
+
 
 class PatientController extends Controller
 {
     protected $patientService;
     protected $medicalFileService;
 
-    public function __construct(PatientService $patientService, MedicalFileService $medicalFileService)
+
+    public function __construct(PatientService $patientService, MedicalFileService $medicalFileService, AppointmentService $service)
     {
         $this->patientService = $patientService;
         $this->medicalFileService = $medicalFileService;
+        $this->service = $service;
     }
 
     public function store(CreatePatientRequest $request)
@@ -65,5 +69,10 @@ class PatientController extends Controller
     {
         return $this->medicalFileService->deleteMedicalFile($patientId, $fileId);
     }
-    
+
+    public function patientPast($patientId)
+    {
+        return $this->service->getPatientPastAppointments((int) $patientId);
+    }
+
 }

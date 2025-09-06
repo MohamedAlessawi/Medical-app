@@ -736,32 +736,78 @@ class AppointmentService
     }
 
     public function getTodaysAppointmentsForCenter()
-{
-    $centerId = auth()->user()->secretaries->first()->center_id;
+    {
+        $centerId = auth()->user()->secretaries->first()->center_id;
 
-    $appointmentRequests = AppointmentRequest::where('center_id', $centerId)
-        ->whereDate('requested_date', now()->toDateString())
-        ->with([
-            'patient:id,full_name',
-            'doctor.user:id,full_name',
-            'doctor.doctorProfile.specialty:id,name'
-        ])
-        ->orderBy('requested_date')
-        ->get()
-        ->map(function($request) {
-            return [
-                'id' => $request->id,
-                'status' => $request->status,
-                'time' => $request->requested_date ? $request->requested_date->format('H:i') : null,
-                'patient_name' => $request->patient->full_name ?? null,
-                'doctor_name' => $request->doctor->user->full_name ?? null,
-                'specialty' => $request->doctor->doctorProfile->specialty->name ?? null,
-                'notes' => $request->notes,
-            ];
-        });
+        $appointmentRequests = AppointmentRequest::where('center_id', $centerId)
+            ->whereDate('requested_date', now()->toDateString())
+            ->with([
+                'patient:id,full_name',
+                'doctor.user:id,full_name',
+                'doctor.doctorProfile.specialty:id,name'
+            ])
+            ->orderBy('requested_date')
+            ->get()
+            ->map(function($request) {
+                return [
+                    'id' => $request->id,
+                    'status' => $request->status,
+                    'time' => $request->requested_date ? $request->requested_date->format('H:i') : null,
+                    'patient_name' => $request->patient->full_name ?? null,
+                    'doctor_name' => $request->doctor->user->full_name ?? null,
+                    'specialty' => $request->doctor->doctorProfile->specialty->name ?? null,
+                    'notes' => $request->notes,
+                ];
+            });
 
-    return $this->unifiedResponse(true, 'Today\'s appointment requests fetched successfully', $appointmentRequests);
-}
+        return $this->unifiedResponse(true, 'Today\'s appointment requests fetched successfully', $appointmentRequests);
+    }
+    
+    public function getPatientPastAppointments(int $patientId)
+    {
+        try {
+            $centerId = auth()->user()->secretaries->first()->center_id;
+            if (!$centerId) {
+                return $this->unifiedResponse(true, 'No center attached to this secretary.', collect());
+            }
+
+            $today = \Carbon\Carbon::today()->toDateString();
+            $nowT  = \Carbon\Carbon::now()->format('H:i:s');
+
+            $rows = \App\Models\Appointment::with(['doctor.user:id,full_name'])
+                ->whereHas('doctor', fn($q) => $q->where('center_id', $centerId))
+                ->where('patient_id', $patientId)
+                ->where('status', '!=', 'deleted')
+                ->where(function ($q) use ($today, $nowT) {
+                    $q->whereDate('appointment_date', '<', $today)
+                    ->orWhere(function ($qq) use ($today, $nowT) {
+                        $qq->whereDate('appointment_date', $today)
+                            ->where('appointment_time', '<', $nowT);
+                    });
+                })
+                ->orderByDesc('appointment_date')
+                ->orderByDesc('appointment_time')
+                ->get()
+                ->map(function ($a) {
+                    return [
+                        'id'                => $a->id,
+                        'doctor_id'         => $a->doctor_id,
+                        'doctor_name'       => optional($a->doctor->user)->full_name,
+                        'appointment_date'  => $a->appointment_date ? \Carbon\Carbon::parse($a->appointment_date)->toDateString() : null,
+                        'appointment_time'  => $a->appointment_time ? substr($a->appointment_time, 0, 5) : null,
+                        'status'            => $a->status,
+                        'attendance_status' => $a->attendance_status,
+                        'notes'             => $a->notes,
+                    ];
+                });
+
+            return $this->unifiedResponse(true, 'Patient past appointments fetched.', $rows);
+
+        } catch (\Throwable $e) {
+            return $this->unifiedResponse(false, 'Failed to fetch past appointments.', [], ['error' => $e->getMessage()], 500);
+        }
+    }
+
 
 
 }

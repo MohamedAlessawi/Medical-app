@@ -224,6 +224,8 @@ Route::middleware(['auth:sanctum', 'role:secretary'])->prefix('secretary')->grou
     Route::put('/patients/{id}', [PatientController::class, 'update']);
     Route::put('/patients/{id}/profile', [PatientController::class, 'updateProfile']);
     Route::delete('/patients/{id}', [PatientController::class, 'destroy']);
+    Route::get('/patients/{patientId}/appointments-past', [PatientController::class, 'patientPast']);
+
     //////////////////////////////////////////////////
     Route::get('/appointment-requests/ignored', [AppointmentRequestController::class, 'getIgnoredAppointmentRequests']);
 
