@@ -709,7 +709,7 @@ class AppointmentService
     {
         $centerId = auth()->user()->secretaries->first()->center_id;
 
-        $pendingAppointments = Appointment::whereHas('doctor', function($q) use ($centerId) {
+        $pendingAppointments = AppointmentRequest::whereHas('doctor', function($q) use ($centerId) {
             $q->where('center_id', $centerId);
         })->where('status', 'pending')->count();
 
@@ -718,9 +718,9 @@ class AppointmentService
                 $q->where('center_id', $centerId);
             })->count();
 
-        $todaysAppointments = Appointment::whereHas('doctor', function($q) use ($centerId) {
+        $todaysAppointments = AppointmentRequest::whereHas('doctor', function($q) use ($centerId) {
             $q->where('center_id', $centerId);
-        })->whereDate('appointment_date', now()->toDateString())->count();
+        })->whereDate('requested_date', now()->toDateString())->count();
 
         $totalPatients = User::whereHas('userCenters', function($q) use ($centerId) {
             $q->where('center_id', $centerId);
@@ -762,7 +762,7 @@ class AppointmentService
 
         return $this->unifiedResponse(true, 'Today\'s appointment requests fetched successfully', $appointmentRequests);
     }
-    
+
     public function getPatientPastAppointments(int $patientId)
     {
         try {
