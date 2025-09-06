@@ -40,6 +40,7 @@ use App\Http\Controllers\Admin\CenterController as AdminCenterController;
 
 use App\Http\Controllers\SuperAdmin\ServiceCatalogController;
 use App\Http\Controllers\Api\Rating\RatingViewController;
+use App\Http\Controllers\NotificationController;
 
 
 /*
@@ -110,6 +111,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/patient/appointment-requests', [PatientAppointmentController::class, 'requestAppointment']);
     Route::get('/patient/appointment-requests', [PatientAppointmentController::class, 'getAppointmentRequests']);
 
+    Route::get('/patient/notifications', [NotificationController::class, 'patientNotification']);
+
+
     Route::middleware(['auth:sanctum','role:patient'])->prefix('patient')->group(function () {
     Route::post('/ratings/doctor', [RatingController::class, 'rateDoctor']);
     Route::post('/ratings/center', [RatingController::class, 'rateCenter']);
@@ -150,6 +154,8 @@ Route::middleware(['auth:sanctum', 'role:doctor'])->group(function () {
     Route::get('doctor/patients/{patientId}/profile', [DoctorPatientProfileController::class, 'show']);
 
     Route::get('doctor/patients/{id}/medical-file', [\App\Http\Controllers\Secretary\PatientController::class, 'listMedicalFiles']);
+        Route::get('doctor/notifications', [NotificationController::class, 'doctorNotification']);
+
 });
 
 
@@ -260,6 +266,9 @@ Route::middleware(['auth:sanctum', 'role:secretary'])->prefix('secretary')->grou
     Route::post('/appointment-requests/{id}/approve', [AppointmentRequestController::class, 'approve']);
     Route::post('/appointment-requests/{id}/reject', [AppointmentRequestController::class, 'reject']);
     Route::get('/appointment-requests-stats', [AppointmentRequestController::class, 'stats']);
+
+    Route::get('/notifications', [NotificationController::class, 'SercretaryNotification']);
+
 });
 
 
