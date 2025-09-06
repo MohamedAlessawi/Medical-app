@@ -40,6 +40,7 @@ use App\Http\Controllers\Admin\CenterController as AdminCenterController;
 
 use App\Http\Controllers\SuperAdmin\ServiceCatalogController;
 use App\Http\Controllers\Api\Rating\RatingViewController;
+use App\Http\Controllers\NotificationController;
 
 
 /*
@@ -90,6 +91,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/patient/profile/emergency', [PatientProfileController::class, 'updateEmergency']);
     Route::put('/patient/profile/lifestyle', [PatientProfileController::class, 'updateLifestyle']);
     Route::put('/patient/profile/insurance', [PatientProfileController::class, 'updateInsurance']);
+    Route::post('/patient/profile/photo', [SecretaryProfileController::class, 'updateProfilePhoto']);
+
 
     Route::get('/patient/centers', [PatientAppointmentController::class, 'getCenters']);
 
@@ -100,9 +103,16 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/patient/doctors/{doctorId}/centers/{centerId}/available-slots', [PatientAppointmentController::class, 'getAvailableSlots']);
 
+    Route::post('/patient/medical-files', [\App\Http\Controllers\Api\Patient\MedicalFileController::class, 'store']);
+    Route::get('/patient/medical-files', [\App\Http\Controllers\Api\Patient\MedicalFileController::class, 'index']);
+    Route::delete('/patient/medical-files/{fileId}', [\App\Http\Controllers\Api\Patient\MedicalFileController::class, 'destroy']);
+
 
     Route::post('/patient/appointment-requests', [PatientAppointmentController::class, 'requestAppointment']);
     Route::get('/patient/appointment-requests', [PatientAppointmentController::class, 'getAppointmentRequests']);
+
+    Route::get('/patient/notifications', [NotificationController::class, 'patientNotification']);
+
 
     Route::middleware(['auth:sanctum','role:patient'])->prefix('patient')->group(function () {
     Route::post('/ratings/doctor', [RatingController::class, 'rateDoctor']);
@@ -134,12 +144,18 @@ Route::get('centers/{centerId}/details', [PatientAppointmentController::class, '
 Route::middleware(['auth:sanctum', 'role:doctor'])->group(function () {
     Route::post('doctor/profile', [DoctorProfileController::class, 'storeOrUpdate']);
     Route::get('doctor/profile', [DoctorProfileController::class, 'show']);
+    Route::post('doctor/profile/photo', [SecretaryProfileController::class, 'updateProfilePhoto']);
+
     Route::get('doctor/appointments', [DoctorAppointmentController::class, 'index']);
     Route::get('doctor/appointments/{id}', [DoctorAppointmentController::class, 'show']);
     Route::get('doctor/past-appointments', [DoctorAppointmentController::class, 'pastAppointments']);
     Route::get('doctor/appointments/patient/{patientId}/visits', [DoctorAppointmentController::class, 'pastVisits']);
     Route::get('doctor/centers', [DoctorCenterController::class, 'index']);
     Route::get('doctor/patients/{patientId}/profile', [DoctorPatientProfileController::class, 'show']);
+
+    Route::get('doctor/patients/{id}/medical-file', [\App\Http\Controllers\Secretary\PatientController::class, 'listMedicalFiles']);
+        Route::get('doctor/notifications', [NotificationController::class, 'doctorNotification']);
+
 });
 
 
@@ -188,6 +204,11 @@ Route::middleware(['auth:sanctum', 'role:super_admin'])->prefix('superadmin')->g
     Route::get('/dashboard/statistics', [DashboardController::class, 'getStats']);
     Route::get('/reports', [ReportController::class, 'index']);
     Route::get('/reports/{id}', [ReportController::class, 'show']);
+
+    Route::get('doctors', [\App\Http\Controllers\SuperAdmin\DoctorApprovalController::class, 'listAll']);
+
+    Route::get('users', [\App\Http\Controllers\SuperAdmin\UserDirectoryController::class, 'index']);
+
 });
 
 
@@ -203,6 +224,8 @@ Route::middleware(['auth:sanctum', 'role:secretary'])->prefix('secretary')->grou
     Route::put('/patients/{id}', [PatientController::class, 'update']);
     Route::put('/patients/{id}/profile', [PatientController::class, 'updateProfile']);
     Route::delete('/patients/{id}', [PatientController::class, 'destroy']);
+    Route::get('/patients/{patientId}/appointments-past', [PatientController::class, 'patientPast']);
+
     //////////////////////////////////////////////////
     Route::get('/appointment-requests/ignored', [AppointmentRequestController::class, 'getIgnoredAppointmentRequests']);
 
@@ -227,6 +250,8 @@ Route::middleware(['auth:sanctum', 'role:secretary'])->prefix('secretary')->grou
 
     Route::get('/dashboard-stats', [DoctorController::class, 'dashboardStats']);
     Route::get('/appointments/today', [DoctorController::class, 'todaysAppointmentsForCenter']);
+    Route::get('/reports/secretary-detailed', [\App\Http\Controllers\Secretary\ReportController::class, 'detailed']);
+
 
     Route::post('/patients/{id}/upload-medical-file', [PatientController::class, 'uploadMedicalFile']);
     Route::get('/patients/{id}/medical-file', [PatientController::class, 'listMedicalFiles']);
@@ -243,6 +268,9 @@ Route::middleware(['auth:sanctum', 'role:secretary'])->prefix('secretary')->grou
     Route::post('/appointment-requests/{id}/approve', [AppointmentRequestController::class, 'approve']);
     Route::post('/appointment-requests/{id}/reject', [AppointmentRequestController::class, 'reject']);
     Route::get('/appointment-requests-stats', [AppointmentRequestController::class, 'stats']);
+
+    Route::get('/notifications', [NotificationController::class, 'SercretaryNotification']);
+
 });
 
 

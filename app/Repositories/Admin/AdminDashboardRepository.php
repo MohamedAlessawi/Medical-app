@@ -22,7 +22,7 @@ class AdminDashboardRepository
         $q = DB::table('appointments as a')
             ->join('doctors as d', 'a.doctor_id', '=', 'd.id')
             ->where('d.center_id', $centerId)
-            ->where('a.status', 'completed');
+            ->where('a.attendance_status', 'present');
 
         if ($onDate) {
             $q->whereDate('a.appointment_date', $onDate->toDateString());
@@ -69,13 +69,13 @@ class AdminDashboardRepository
     public function avgCenterRating(int $centerId, int $days = 30): ?float
     {
         // // لو عندك ratings على المركز مباشرة:
-        // $q = DB::table('ratings')->where('center_id', $centerId);
-        // if ($days > 0) {
-        //     $q->where('created_at', '>=', now()->subDays($days));
-        // }
-        // $avg = $q->avg('score');
-        // return $avg ? (float) $avg : null;
-        return 3.5 ;
+        $q = DB::table('ratings')->where('rateable_id', $centerId);
+        if ($days > 0) {
+            $q->where('created_at', '>=', now()->subDays($days));
+        }
+        $avg = $q->avg('score');
+        return $avg ? (float) $avg : null;
+        // return 3.5 ;
     }
 
     /** ترند لآخر N أيام: requests الجديدة + completed */

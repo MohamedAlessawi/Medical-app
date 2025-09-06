@@ -7,6 +7,8 @@ use App\Traits\ApiResponseTrait;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use App\Models\Notification;
+
 
 class AppointmentRequestService
 {
@@ -28,6 +30,7 @@ class AppointmentRequestService
 
         $query = AppointmentRequest::where('center_id', $centerId)
             ->where('status', '!=', 'deleted')
+            ->whereDate('requested_date', '>=', now()->toDateString())
             ->with(['patient', 'doctor.user.doctorProfile.specialty', 'center']);
 
         if ($request->has('status')) {
@@ -76,7 +79,6 @@ class AppointmentRequestService
         return $this->unifiedResponse(true, 'Appointment request details fetched successfully.', $request);
     }
 
-    
 
     public function approveRequest($id)
     {
@@ -91,38 +93,129 @@ class AppointmentRequestService
             return $this->unifiedResponse(false, 'Appointment request not found or already processed.', [], [], 404);
         }
 
-        $conflictExists = AppointmentRequest::where('doctor_id', $appointmentRequest->doctor_id)
-            ->whereDate('requested_date', $appointmentRequest->requested_date->format('Y-m-d'))
-            ->whereTime('requested_date', $appointmentRequest->requested_date->format('H:i:s'))
-            ->where('status', 'approved')
-            ->exists();
+        // تاريخ ووقت الطلب المقبول
+        $dt   = $appointmentRequest->requested_date instanceof \Carbon\Carbon
+            ? $appointmentRequest->requested_date
+            : \Carbon\Carbon::parse($appointmentRequest->requested_date);
+        $date = $dt->toDateString();
+        $time = $dt->format('H:i:s');
 
-        if ($conflictExists) {
-            return $this->unifiedResponse(false, 'This time slot is no longer available.', [], [], 409);
-        }
+        // سنحتاج IDs المرضى المتضاربين لنرسل إشعارات بعد الـcommit
+        $conflictingPatientIds = [];
 
-        // $appointmentRequest->update([
-        //     'status' => 'approved'
-        // ]);
-        DB::transaction(function () use ($appointmentRequest, $centerId) {
-            // 1) غيّر حالة الطلب لمقبول
+        DB::transaction(function () use ($appointmentRequest, $centerId, $date, $time, &$conflictingPatientIds) {
+            // 1) قبول الطلب الحالي
             $appointmentRequest->update(['status' => 'approved']);
 
-            // 2) اربط المريض بالمركز في user_centers
-            // نفترض وجود عمود patient_id على الطلب؛ إن لم يكن، استخدم $appointmentRequest->patient->id
+            // 2) ربط المريض بالمركز (آخر زيارة = تاريخ الطلب)
             $patientId = $appointmentRequest->patient_id ?? ($appointmentRequest->patient?->id);
-
             if ($patientId) {
                 $this->linkPatientToCenter($patientId, $centerId, $appointmentRequest->requested_date);
             }
+
+            // 3) رفض كل الطلبات المتضاربة (نفس الطبيب + التاريخ + الوقت) ما عدا الحالي
+            $conflicting = AppointmentRequest::where('doctor_id', $appointmentRequest->doctor_id)
+                ->where('center_id', $centerId)
+                ->whereDate('requested_date', $date)
+                ->whereTime('requested_date', $time)
+                ->whereIn('status', ['pending', 'approved'])
+                ->where('id', '!=', $appointmentRequest->id)
+                ->get();
+
+            foreach ($conflicting as $other) {
+                $other->update([
+                    'status' => 'rejected',
+                    'notes'  => trim(($other->notes ?? '') . "\nAuto-rejected: time slot already booked."),
+                ]);
+                if ($other->patient_id) {
+                    $conflictingPatientIds[] = (int) $other->patient_id;
+                }
+            }
         });
+
+        // ===== إشعارات بعد نجاح العملية =====
+
+        // للمريض المقبول
+        Notification::pushToUser(
+            userId: (int) $appointmentRequest->patient_id,
+            centerId: (int) $centerId,
+            title: 'Booking confirmed',
+            message: "Your appointment request on {$date} at {$time} has been approved."
+        );
+
+        // للدكتور
+        $doctorUserId = (int) \DB::table('doctors')->where('id', $appointmentRequest->doctor_id)->value('user_id');
+        if ($doctorUserId) {
+            Notification::pushToUser(
+                userId: $doctorUserId,
+                centerId: (int) $centerId,
+                title: 'New appointment',
+                message: "You have a new approved booking on {$date} at {$time}."
+            );
+        }
+
+        // لكل المرضى أصحاب الطلبات المتضاربة التي رُفضت
+        if (!empty($conflictingPatientIds)) {
+            Notification::pushToUsers(
+                userIds: $conflictingPatientIds,
+                centerId: (int) $centerId,
+                title: 'Booking rejected',
+                message: "Your request was rejected because the time slot has been booked. Please choose another time."
+            );
+        }
 
         return $this->unifiedResponse(true, 'Appointment request approved successfully.', [
             'appointment_request_id' => $appointmentRequest->id,
-            'status' => $appointmentRequest->status,
+            'status'                 => $appointmentRequest->status,
         ]);
     }
 
+
+
+    // public function approveRequest($id)
+    // {
+    //     $centerId = auth()->user()->secretaries->first()->center_id;
+
+    //     $appointmentRequest = AppointmentRequest::where('id', $id)
+    //         ->where('center_id', $centerId)
+    //         ->where('status', 'pending')
+    //         ->first();
+
+    //     if (!$appointmentRequest) {
+    //         return $this->unifiedResponse(false, 'Appointment request not found or already processed.', [], [], 404);
+    //     }
+
+    //     $conflictExists = AppointmentRequest::where('doctor_id', $appointmentRequest->doctor_id)
+    //         ->whereDate('requested_date', $appointmentRequest->requested_date->format('Y-m-d'))
+    //         ->whereTime('requested_date', $appointmentRequest->requested_date->format('H:i:s'))
+    //         ->where('status', 'approved')
+    //         ->exists();
+
+    //     if ($conflictExists) {
+    //         return $this->unifiedResponse(false, 'This time slot is no longer available.', [], [], 409);
+    //     }
+
+    //     // $appointmentRequest->update([
+    //     //     'status' => 'approved'
+    //     // ]);
+    //     DB::transaction(function () use ($appointmentRequest, $centerId) {
+    //         // 1) غيّر حالة الطلب لمقبول
+    //         $appointmentRequest->update(['status' => 'approved']);
+
+    //         // 2) اربط المريض بالمركز في user_centers
+    //         // نفترض وجود عمود patient_id على الطلب؛ إن لم يكن، استخدم $appointmentRequest->patient->id
+    //         $patientId = $appointmentRequest->patient_id ?? ($appointmentRequest->patient?->id);
+
+    //         if ($patientId) {
+    //             $this->linkPatientToCenter($patientId, $centerId, $appointmentRequest->requested_date);
+    //         }
+    //     });
+
+    //     return $this->unifiedResponse(true, 'Appointment request approved successfully.', [
+    //         'appointment_request_id' => $appointmentRequest->id,
+    //         'status' => $appointmentRequest->status,
+    //     ]);
+    // }
 
 
     public function rejectRequest($id, $reason = null)
@@ -138,14 +231,46 @@ class AppointmentRequestService
             return $this->unifiedResponse(false, 'Appointment request not found or already processed.', [], [], 404);
         }
 
-
         $appointmentRequest->update([
             'status' => 'rejected',
-            'notes' => $appointmentRequest->notes . "\nRejection reason: " . ($reason ?? 'No reason provided'),
+            'notes'  => trim(($appointmentRequest->notes ?? '') . "\nRejection reason: " . ($reason ?? 'No reason provided')),
         ]);
+
+        // إشعار للمريض
+        if ($appointmentRequest->patient_id) {
+            Notification::pushToUser(
+                userId: (int) $appointmentRequest->patient_id,
+                centerId: (int) $centerId,
+                title: 'Booking rejected',
+                message: 'Your appointment request was rejected. Please choose another time.'
+            );
+        }
 
         return $this->unifiedResponse(true, 'Appointment request rejected successfully.');
     }
+
+
+    // public function rejectRequest($id, $reason = null)
+    // {
+    //     $centerId = auth()->user()->secretaries->first()->center_id;
+
+    //     $appointmentRequest = AppointmentRequest::where('id', $id)
+    //         ->where('center_id', $centerId)
+    //         ->where('status', 'pending')
+    //         ->first();
+
+    //     if (!$appointmentRequest) {
+    //         return $this->unifiedResponse(false, 'Appointment request not found or already processed.', [], [], 404);
+    //     }
+
+
+    //     $appointmentRequest->update([
+    //         'status' => 'rejected',
+    //         'notes' => $appointmentRequest->notes . "\nRejection reason: " . ($reason ?? 'No reason provided'),
+    //     ]);
+
+    //     return $this->unifiedResponse(true, 'Appointment request rejected successfully.');
+    // }
 
 
     public function getStats()

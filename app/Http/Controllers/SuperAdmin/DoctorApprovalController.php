@@ -28,4 +28,9 @@ class DoctorApprovalController extends Controller
     {
         return $this->approvalService->reject($id);
     }
+
+    public function listAll()
+    {
+        return $this->approvalService->listAllDoctors();
+    }
 }

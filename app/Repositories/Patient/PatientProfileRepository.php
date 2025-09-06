@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\Appointment;
 use App\Models\MedicalFile;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Storage;
 
 class PatientProfileRepository
 {
@@ -24,10 +25,16 @@ class PatientProfileRepository
     {
         $user = User::findOrFail($userId);
 
+        $photoPath = $user->profile_photo;
+        $photoUrl  = $photoPath
+            ? Storage::disk('public')->url(ltrim($photoPath, '/'))
+            : null;
+
         return [
             'gender' => $user->gender,
             'birthdate' => $user->birthdate,
             'age' => $user->birthdate ? Carbon::parse($user->birthdate)->age : null,
+            'profile_photo'  => $photoUrl,
             //'blood_type' => $user->blood_type ?? null, // إذا أضفتِها لاحقاً
         ];
     }

@@ -17,30 +17,30 @@ class DoctorApprovalService
     }
 
     public function listPending()
-{
-    $doctors = $this->doctorRepo->getPendingProfiles();
+    {
+        $doctors = $this->doctorRepo->getPendingProfiles();
 
-    $filtered = $doctors->map(function ($doctor) {
+        $filtered = $doctors->map(function ($doctor) {
 
-        $certificateUrl = $doctor->certificate
-                ? asset('storage/' . ltrim($doctor->certificate, '/'))
-                : null;
+            $certificateUrl = $doctor->certificate
+                    ? asset('storage/' . ltrim($doctor->certificate, '/'))
+                    : null;
 
-        return [
-            'doctor_profile' => [
-                'id' => $doctor->id,
-                'specialty_id' => $doctor->specialty_id,
-                'certificate' => $certificateUrl,
-                'status' => $doctor->status,
-            ],
-            'user' => [
-                'full_name' => $doctor->user->full_name,
-            ]
-        ];
-    });
+            return [
+                'doctor_profile' => [
+                    'id' => $doctor->id,
+                    'specialty_id' => $doctor->specialty_id,
+                    'certificate' => $certificateUrl,
+                    'status' => $doctor->status,
+                ],
+                'user' => [
+                    'full_name' => $doctor->user->full_name,
+                ]
+            ];
+        });
 
-    return $this->unifiedResponse(true, 'Pending doctors fetched', $filtered);
-}
+        return $this->unifiedResponse(true, 'Pending doctors fetched', $filtered);
+    }
 
 
     public function approve($id)
@@ -54,4 +54,43 @@ class DoctorApprovalService
         $profile = $this->doctorRepo->updateStatus($id, 'rejected');
         return $this->unifiedResponse(true, 'Doctor rejected', $profile);
     }
+
+    public function listAllDoctors()
+    {
+        $doctors = \App\Models\User::whereHas('roles', fn($q) => $q->where('name','doctor'))
+            ->with(['doctorProfile.specialty'])
+            ->orderBy('full_name')
+            ->get();
+
+        $data = $doctors->map(function ($u) {
+            $profile = $u->doctorProfile;
+            $certificateUrl = $profile?->certificate
+                ? asset('storage/' . ltrim($profile->certificate, '/'))
+                : null;
+
+            return [
+                'user' => [
+                    'id'        => $u->id,
+                    'full_name' => $u->full_name,
+                    'email'     => $u->email,
+                    'phone'     => $u->phone,
+                    'birthdate' => $u->birthdate,
+                    'gender'    => $u->gender,
+                    'address'   => $u->address
+                ],
+                'doctor_profile' => $profile ? [
+                    'id'                   => $profile->id,
+                    'specialty_id'         => $profile->specialty_id,
+                    'specialty_name'       => $profile->specialty?->name,
+                    'about_me'             => $profile->about_me,
+                    'years_of_experience'  => $profile->years_of_experience,
+                    'status'               => $profile->status,
+                    'certificate'          => $certificateUrl,
+                ] : null
+            ];
+        });
+
+        return $this->unifiedResponse(true, 'All doctors fetched', $data);
+    }
+
 }

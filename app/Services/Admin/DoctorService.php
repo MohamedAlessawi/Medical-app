@@ -7,6 +7,8 @@ use App\Repositories\Admin\InvitationRepository;
 use App\Traits\ApiResponseTrait;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Models\Notification;
+
 
 class DoctorService
 {
@@ -28,26 +30,54 @@ class DoctorService
         return $this->unifiedResponse(true, 'Doctors fetched.', $data);
     }
 
+
     public function invite(array $payload)
     {
-        // $inv = $this->invitationRepo->create([
-        //     'center_id'      => $this->myCenterId(),
-        //     'doctor_user_id' => $payload['doctor_user_id'],
-        //     'invited_by'     => Auth::id(),
-        //     'message'        => $payload['message'] ?? null,
-        // ]);
-        // return $this->unifiedResponse(true, 'Invitation sent.', $inv);
+        $centerId = $this->myCenterId();
 
         $result = $this->invitationRepo->toggleForCenterAndDoctor(
-            $this->myCenterId(),
+            $centerId,
             $payload['doctor_user_id'],
             \Auth::id(),
             $payload['message'] ?? null
         );
 
+        // لو كانت "دعوة جديدة"، ابعت إشعار للطبيب
+        if (($result['mode'] ?? null) === 'sent') {
+            $centerName = (string) \DB::table('centers')->where('id', $centerId)->value('name');
+            Notification::pushToUser(
+                userId: (int) $payload['doctor_user_id'],
+                centerId: (int) $centerId,
+                title: 'Center invitation',
+                message: "Center {$centerName} invited you to join."
+            );
+        }
+
         $msg = $result['mode'] === 'sent' ? 'Invitation sent.' : 'Invitation canceled.';
         return $this->unifiedResponse(true, $msg, $result);
     }
+
+
+    // public function invite(array $payload)
+    // {
+    //     // $inv = $this->invitationRepo->create([
+    //     //     'center_id'      => $this->myCenterId(),
+    //     //     'doctor_user_id' => $payload['doctor_user_id'],
+    //     //     'invited_by'     => Auth::id(),
+    //     //     'message'        => $payload['message'] ?? null,
+    //     // ]);
+    //     // return $this->unifiedResponse(true, 'Invitation sent.', $inv);
+
+    //     $result = $this->invitationRepo->toggleForCenterAndDoctor(
+    //         $this->myCenterId(),
+    //         $payload['doctor_user_id'],
+    //         \Auth::id(),
+    //         $payload['message'] ?? null
+    //     );
+
+    //     $msg = $result['mode'] === 'sent' ? 'Invitation sent.' : 'Invitation canceled.';
+    //     return $this->unifiedResponse(true, $msg, $result);
+    // }
 
     public function toggleStatus(int $doctorId, bool $isActive)
     {
